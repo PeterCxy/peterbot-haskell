@@ -25,7 +25,7 @@ main = do
       Nothing -> putStrLn "Failed to load config"
       Just config -> do
         bus <- createBus >>= runBus :: IO (EventBus TgUpdate)
-        registerSubscribers bus
+        registerSubscribers config bus
         --runBus bus
         (async $ fetchUpdates bus config $ -1) >>= wait
         return ()
@@ -59,13 +59,17 @@ fetchUpdates bus config index = do
       -- Return a pseudo value
       return $ TgResponse False Nothing
 
-registerSubscribers :: EventBus TgUpdate -> IO ()
-registerSubscribers bus = do
+registerSubscribers :: Config -> EventBus TgUpdate -> IO ()
+registerSubscribers config bus = do
   subscribe bus $ \_ _ ev -> do
     print "Received Message"
     print $ update_id ev
     --subscribe bus $ \_ _ _ -> print "My new subscriber!"
-    return ()
+    case message ev of
+      Nothing -> return ()
+      Just msg -> do
+        async $ sendMessage config (Types.id $ chat msg) "Hello!"
+        return ()
   subscribeOnce bus $ \_ b _ -> do
     print "This should only be triggered once"
     print "But a new subscriber will emerge"
