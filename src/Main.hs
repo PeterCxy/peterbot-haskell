@@ -23,8 +23,7 @@ main = do
     case configM of
       Nothing -> putStrLn "Failed to load config"
       Just config -> do
-        thread <- async $ fetchUpdates config $ -1
-        wait thread
+        (async $ fetchUpdates config $ -1) >>= wait
         return ()
   where
     confFile = "config.json"
