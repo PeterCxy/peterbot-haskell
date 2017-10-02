@@ -15,6 +15,7 @@ import qualified Data.ByteString.Lazy.Char8 as BS
 import Types
 import Utils
 import EventBus
+import Commands
 
 main :: IO ()
 main = do
@@ -65,14 +66,4 @@ registerSubscribers config bus = do
     print "Received Message"
     print $ update_id ev
     --subscribe bus $ \_ _ _ -> print "My new subscriber!"
-    case message ev of
-      Nothing -> return ()
-      Just msg -> do
-        async $ sendMessage config (Types.id $ chat msg) "Hello!"
-        return ()
-  subscribeOnce bus $ \_ b _ -> do
-    print "This should only be triggered once"
-    print "But a new subscriber will emerge"
-    subscribe b $ \_ _ _ -> print "My new subscriber!"
-    return ()
-  return ()
+  registerCommands config bus
