@@ -16,7 +16,7 @@ type Command = Config -> EventBus TgUpdate -> TgMessage -> [T.Text] -> IO ()
 -- TODO: Make a proper parser for the cmdline
 registerCommands :: Config -> EventBus TgUpdate -> IO ()
 registerCommands config bus = do
-    mapM reg cmds
+    _ <- mapM reg cmds
     return ()
   where
     -- List of commands and their corresponding functions
@@ -24,7 +24,7 @@ registerCommands config bus = do
       ("hello", cmdHello)]
     reg :: (String, Command) -> IO ()
     reg pair = do
-      subscribe bus $ \uid b ev ->
+      _ <- subscribe bus $ \_ b ev ->
         case message ev of
           Nothing -> return ()
           Just msg -> case text msg of
@@ -39,5 +39,5 @@ registerCommands config bus = do
 
 cmdHello :: Command
 cmdHello config bus msg args = do
-  async $ sendMessage config (Types.id $ chat msg) "Hello!"
+  _ <- async $ sendMessage config (Types.id $ chat msg) "Hello!"
   return ()
