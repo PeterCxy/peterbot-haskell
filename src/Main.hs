@@ -3,6 +3,7 @@
 module Main where
 
 import Control.Concurrent.Async
+import Control.Monad
 import Control.Exception
 import Data.Aeson
 import qualified Data.Text as T
@@ -35,7 +36,22 @@ main = do
 
 fetchUpdates :: Config -> Int -> IO ()
 fetchUpdates config index = do
-    res <- fmap getResponseBody $ httpJSON url :: IO (TgResponse [TgUpdate])
-    putStrLn $ if ok res then "Haha" else "Oops"
+    res <- catch (fmap getResponseBody $ httpJSON url) fetchFail :: IO (TgResponse [TgUpdate])
+    case ok res of
+      False -> next index -- Not okay (maybe exception), retry this request
+      True -> case result res of
+        Nothing -> next index -- Nothing returned as Result, retry
+        Just upd -> do
+          print $ length upd
+          if length upd == 0
+            then next index -- No result received, retry
+            else next $ update_id $ last upd
   where
     url = apiGet (token config) "getUpdates" [("offset", Just (index + 1))]
+    next :: Int -> IO ()
+    next newIndex = fetchUpdates config newIndex
+    fetchFail :: SomeException -> IO (TgResponse [TgUpdate])
+    fetchFail ex = do
+      putStrLn "Failed to fetch updates from Telegram. Skipping."
+      -- Return a pseudo value
+      return $ TgResponse False Nothing
