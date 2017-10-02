@@ -12,7 +12,6 @@ import Data.Maybe
 import System.IO
 import Data.ByteString.Conversion
 import qualified Data.ByteString.Lazy.Char8 as BS
-import Network.HTTP.Simple
 import Types
 import Utils
 import EventBus
@@ -40,7 +39,7 @@ main = do
 
 fetchUpdates :: EventBus TgUpdate -> Config -> Int -> IO ()
 fetchUpdates bus config index = do
-    res <- catch (fmap getResponseBody $ httpJSON url) fetchFail :: IO (TgResponse [TgUpdate])
+    res <- catch (getUpdates config $ index + 1) fetchFail :: IO (TgResponse [TgUpdate])
     case ok res of
       False -> next index -- Not okay (maybe exception), retry this request
       True -> case result res of
@@ -52,7 +51,6 @@ fetchUpdates bus config index = do
             then next index -- No result received, retry
             else next $ update_id $ last upd
   where
-    url = apiGet (token config) "getUpdates" [("offset", Just (index + 1))]
     next :: Int -> IO ()
     next newIndex = fetchUpdates bus config newIndex
     fetchFail :: SomeException -> IO (TgResponse [TgUpdate])
