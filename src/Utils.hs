@@ -42,7 +42,8 @@ getUpdates :: Config -> Int -> IO (TgResponse [TgUpdate])
 getUpdates config offset =
     fmap getResponseBody $ httpJSON url
   where
-    url = apiGet (token config) "getUpdates" [("offset", Just (offset))]
+    timeout = 300
+    url = apiGet (token config) "getUpdates" [("offset", Just (offset)), ("timeout", Just (timeout))]
 
 sendMessage :: Config -> Int -> String -> IO (TgResponse TgMessage)
 sendMessage config target msg =
