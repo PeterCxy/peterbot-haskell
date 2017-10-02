@@ -17,8 +17,8 @@ import Utils
 
 main :: IO ()
 main = do
-    configStr <- catch (fmap hGetContents $ openFile confFile ReadMode) openFail
-    configM <- fmap decode $ fmap BS.pack configStr :: IO (Maybe Config)
+    configStr <- catch (openFile confFile ReadMode >>= hGetContents) openFail
+    let configM = decode $ BS.pack configStr :: Maybe Config
 
     case configM of
       Nothing -> putStrLn "Failed to load config"
@@ -28,7 +28,7 @@ main = do
         return ()
   where
     confFile = "config.json"
-    openFail :: IOError -> IO (IO (String))
+    openFail :: IOError -> IO (String)
     openFail ex = do
       putStrLn $ "Failed to open file " ++ confFile
       print ex
