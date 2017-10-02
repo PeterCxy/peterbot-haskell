@@ -46,7 +46,7 @@ fetchUpdates bus config index = do
       True -> case result res of
         Nothing -> next index -- Nothing returned as Result, retry
         Just upd -> do
-          print $ length upd
+          --print $ length upd
           mapM (publish bus) upd
           if length upd == 0
             then next index -- No result received, retry
