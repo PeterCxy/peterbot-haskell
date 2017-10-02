@@ -17,8 +17,8 @@ cabal-version:       >=1.10
 
 executable peterbot-haskell
   main-is:             Main.hs
-  other-modules:       Types Utils
+  other-modules:       Types Utils EventBus
   -- other-extensions:
-  build-depends:       base >=4.10 && <4.11, text, aeson, bytestring, http-client, http-client-tls, http-conduit, bytestring-conversion, async
+  build-depends:       base >=4.10 && <4.11, text, aeson, bytestring, http-client, http-client-tls, http-conduit, bytestring-conversion, async, stm, vector, uuid
   hs-source-dirs:      src
   default-language:    Haskell2010
