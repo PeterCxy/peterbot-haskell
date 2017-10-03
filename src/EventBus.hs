@@ -10,10 +10,11 @@ import Data.UUID
 import Data.UUID.V4
 import qualified Data.Vector as V
 import System.IO
+import Utils
 
 -- A simple and naive EventBus implementation
 -- With STM
--- Since things are immunable in Haskell, the implementation makes use of the mutable TVar
+-- Since things are immutable in Haskell, the implementation makes use of the mutable TVar
 -- By which every time a event is received, the EventBus itself is replaced with a modified one
 -- Thus we can add / remove subscribers
 -- Note that subscribers (Handlers) are executed inside the EventBus thread.
@@ -91,14 +92,10 @@ runBus' bus = do
       func handler myBus ev
 
 getNextBusTVar :: EventBus t -> IO (TVar (EventBus t))
-getNextBusTVar bus = case nextBus bus of
-  Nothing -> ioError $ userError "This should never happen"
-  Just newBus -> return newBus
+getNextBusTVar bus = return $ assertM' $ nextBus bus
 
 getNextBus :: EventBus t -> IO (EventBus t)
-getNextBus bus = case nextBus bus of
-  Nothing -> return bus
-  Just newBus -> readTVarIO newBus
+getNextBus bus = readTVarIO . assertM' $ nextBus bus
 
 -- Add a subscriber to EventBus
 -- See the definition of Handler` for how to build a subscriber

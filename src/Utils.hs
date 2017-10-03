@@ -10,6 +10,17 @@ import Network.HTTP.Simple
 import System.IO
 import Types
 
+defVal :: Maybe t -> t -> t
+defVal Nothing def = def
+defVal (Just val) _ = val
+
+assertM :: String -> Maybe t -> t
+assertM err Nothing = error err
+assertM _ (Just val) = val
+
+assertM' :: Maybe t -> t
+assertM' = assertM "This should never happen"
+
 apiURL :: T.Text -> T.Text -> T.Text
 apiURL token api = T.concat [baseURL, token, "/", api]
   where baseURL = "https://api.telegram.org/bot"

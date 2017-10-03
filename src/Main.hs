@@ -20,16 +20,13 @@ import Commands
 main :: IO ()
 main = do
     configStr <- catch (openFile confFile ReadMode >>= hGetContents) openFail
-    let configM = decode $ BS.pack configStr :: Maybe Config
+    let config = assertM "Failed to load config" $ decode $ BS.pack configStr :: Config
 
-    case configM of
-      Nothing -> putStrLn "Failed to load config"
-      Just config -> do
-        bus <- createBus >>= runBus :: IO (EventBus TgUpdate)
-        registerSubscribers config bus
-        --runBus bus
-        (async $ fetchUpdates bus config $ -1) >>= wait
-        return ()
+    bus <- createBus >>= runBus :: IO (EventBus TgUpdate)
+    registerSubscribers config bus
+    --runBus bus
+    (async $ fetchUpdates bus config $ -1) >>= wait
+    return ()
   where
     confFile = "config.json"
     openFail :: IOError -> IO (String)
