@@ -30,7 +30,7 @@ data TgResponse t = (TgResult t) => TgResponse {
 instance (FromJSON t, TgResult t) => FromJSON (TgResponse t) where
   parseJSON = withObject "TgResponse" $ \r -> TgResponse
    <$> r .: "ok"
-   <*> r .: "result"
+   <*> r .:? "result"
 
 data TgUpdate = TgUpdate {
   update_id :: Int,
@@ -43,7 +43,7 @@ instance TgResult TgUpdate where
 instance FromJSON TgUpdate where
   parseJSON = withObject "TgUpdate" $ \u -> TgUpdate
    <$> u .: "update_id"
-   <*> u .: "message"
+   <*> u .:? "message"
 
 data TgMessage = TgMessage {
   message_id :: Int,
@@ -58,7 +58,7 @@ instance FromJSON TgMessage where
   parseJSON = withObject "TgMessage" $ \m -> TgMessage
     <$> m .: "message_id"
     <*> m .: "chat"
-    <*> m .: "text"
+    <*> m .:? "text"
 
 data TgChat = TgChat {
   id :: Int
