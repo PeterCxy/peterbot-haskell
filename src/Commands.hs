@@ -27,7 +27,7 @@ registerCommands config bus = do
     subscriber pair bus ev = do
       msg <- message ev
       txt <- text msg
-      let args = T.splitOn " " $ T.strip txt
+      let args = parseArgs txt
       if (length args /= 0) && (head args == T.concat ["/", T.pack (fst pair)])
         then return $ snd pair config bus msg args
         else return $ return () -- Remeber this is Maybe (IO ()), so we need two `return`s
@@ -42,6 +42,9 @@ registerCommands config bus = do
       return ()
 
 cmdHello :: Command
-cmdHello config bus msg args = do
+cmdHello config _ msg ["/hello"] = do
   _ <- async $ sendMessage config (Types.id $ chat msg) "Hello!"
+  return ()
+cmdHello config _ msg _ = do
+  _ <- async $ sendMessage config (Types.id $ chat msg) "Hello but I do not take any argument, sorry."
   return ()
