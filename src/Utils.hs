@@ -35,6 +35,7 @@ pattern StartWithQuote t <- (T.stripPrefix "\"" -> Just t)
 -- Actual implementation of the argument parser
 -- Returns a revese list of arguments
 parseArgs' :: T.Text -> T.Text -> Char -> Bool -> [T.Text] -> [T.Text]
+-- parseArgs string currentItem lastChar insideQuote stackArray
 -- Final case: the string becomes empty, we only need to push the final argument to list
 -- Note that here we ignored the case that quotation marks do not match. This actually does not matter for our case.
 parseArgs' "" cur _ _ arr = cur : arr
