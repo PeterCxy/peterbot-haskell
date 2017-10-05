@@ -4,6 +4,7 @@ module Main where
 
 import Control.Concurrent.Async
 import Control.Monad
+import Control.Monad.State.Lazy
 import Control.Exception
 import Data.Aeson
 import qualified Data.Text as T
@@ -23,9 +24,9 @@ main = do
     let config = assertM "Failed to load config" $ decode $ BS.pack configStr :: Config
 
     bus <- createBus >>= runBus :: IO (EventBus TgUpdate)
-    registerSubscribers config bus
+    runStateT (registerSubscribers bus) config
     --runBus bus
-    (async $ fetchUpdates bus config $ -1) >>= wait
+    (async $ runStateT (fetchUpdates bus $ -1) config) >>= wait
     return ()
   where
     confFile = "config.json"
@@ -35,32 +36,32 @@ main = do
       print ex
       throwIO ex
 
-fetchUpdates :: EventBus TgUpdate -> Config -> Int -> IO ()
-fetchUpdates bus config index = do
-    res <- catch (getUpdates config $ index + 1) fetchFail :: IO (TgResponse [TgUpdate])
+fetchUpdates :: EventBus TgUpdate -> Int -> TgBot ()
+fetchUpdates bus index = do
+    res <- catch' (getUpdates $ index + 1) fetchFail :: TgBot (TgResponse [TgUpdate])
     case ok res of
       False -> next index -- Not okay (maybe exception), retry this request
       True -> case result res of
         Nothing -> next index -- Nothing returned as Result, retry
         Just upd -> do
           --print $ length upd
-          mapM (publish bus) upd
+          liftIO $ mapM (publish bus) upd
           if length upd == 0
             then next index -- No result received, retry
             else next $ update_id $ last upd
   where
-    next :: Int -> IO ()
-    next newIndex = fetchUpdates bus config newIndex
-    fetchFail :: SomeException -> IO (TgResponse [TgUpdate])
+    next :: Int -> TgBot ()
+    next newIndex = fetchUpdates bus newIndex
+    fetchFail :: SomeException -> TgBot (TgResponse [TgUpdate])
     fetchFail ex = do
-      putStrLn "Failed to fetch updates from Telegram. Skipping."
+      liftIO $ putStrLn "Failed to fetch updates from Telegram. Skipping."
       -- Return a pseudo value
       return $ TgResponse False Nothing
 
-registerSubscribers :: Config -> EventBus TgUpdate -> IO ()
-registerSubscribers config bus = do
-  subscribe bus $ \_ _ ev -> do
+registerSubscribers :: EventBus TgUpdate -> TgBot ()
+registerSubscribers bus = do
+  liftIO $ subscribe bus $ \_ _ ev -> do
     print "Received Message"
     print $ update_id ev
     --subscribe bus $ \_ _ _ -> print "My new subscriber!"
-  registerCommands config bus
+  registerCommands bus

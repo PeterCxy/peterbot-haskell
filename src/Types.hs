@@ -2,6 +2,7 @@
 
 module Types where
 
+import Control.Monad.Trans.State
 import Data.Aeson
 import qualified Data.Text as T
 
@@ -9,6 +10,8 @@ data Config = Config {
   token :: T.Text,
   admin :: T.Text
 }
+
+type TgBot a = StateT Config IO a
 
 instance FromJSON Config where
   parseJSON = withObject "Config" $ \c -> Config

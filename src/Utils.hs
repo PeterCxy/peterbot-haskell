@@ -2,6 +2,8 @@
 
 module Utils where
 
+import Control.Exception
+import Control.Monad.State.Lazy
 import Data.ByteString
 import Data.ByteString.Conversion
 import qualified Data.Text as T
@@ -20,6 +22,13 @@ assertM _ (Just val) = val
 
 assertM' :: Maybe t -> t
 assertM' = assertM "This should never happen"
+
+-- `catch` lifted to TgBot (a.k.a StateT Config IO)
+catch' :: TgBot a -> (SomeException -> TgBot a) -> TgBot a
+catch' action handler = do
+  config <- get
+  let h e = fmap fst $ runStateT (handler e) config
+  liftIO $ catch (fmap fst $ runStateT action config) h
 
 -- Parse arguments passed to a bot command
 --   /cmd_name arg1 arg2 "some argument with spaces" "I want \"quotation marks\" inside it!" arg5 arg6 ...
@@ -81,15 +90,17 @@ toQS = Prelude.map (\tup -> (fst tup, fmap toByteString' $ snd tup))
 toBody :: (ToByteString a) => [(ByteString, a)] -> [(ByteString, ByteString)]
 toBody = Prelude.map (\tup -> (fst tup, toByteString' $ snd tup))
 
-getUpdates :: Config -> Int -> IO (TgResponse [TgUpdate])
-getUpdates config offset =
+getUpdates :: Int -> TgBot (TgResponse [TgUpdate])
+getUpdates offset = do
+    config <- get
+    let url = apiGet (token config) "getUpdates" [("offset", Just (offset)), ("timeout", Just (timeout))]
     fmap getResponseBody $ httpJSON url
   where
     timeout = 300
-    url = apiGet (token config) "getUpdates" [("offset", Just (offset)), ("timeout", Just (timeout))]
 
-sendMessage :: Config -> Int -> String -> IO (TgResponse TgMessage)
-sendMessage config target msg =
-    fmap getResponseBody $ httpJSON url
-  where
-    url = apiPost (token config) "sendMessage" [("chat_id", show target), ("text", msg)]
+sendMessage :: Int -> String -> TgBot (TgResponse TgMessage)
+sendMessage target msg = do
+  config <- get
+  let url = apiPost (token config) "sendMessage" [("chat_id", show target), ("text", msg)]
+  fmap getResponseBody $ httpJSON url
+    
