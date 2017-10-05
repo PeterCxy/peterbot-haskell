@@ -4,7 +4,7 @@ module Commands where
 
 import Control.Concurrent.Async
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Class as TC
+import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import qualified Data.Text as T
 import Data.UUID
@@ -31,7 +31,7 @@ registerCommands bus = do
     subscriber pair bus ev = do
       msg <- MaybeT $ return $ message ev -- Lift Maybe into MaybeT
       txt <- MaybeT $ return $ text msg
-      config <- TC.lift getConfig
+      config <- lift getConfig
       let args = parseArgs txt
       if (length args /= 0) && (head args == T.concat ["/", T.pack (fst pair)])
         then do

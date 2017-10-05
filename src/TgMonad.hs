@@ -39,13 +39,13 @@ instance (Monad m) => Monad (TgBot m) where
 instance (MonadIO m) => MonadIO (TgBot m) where
   liftIO action = TgBot $ \_ -> liftIO action
 
+instance MonadTrans TgBot where
+  lift m = TgBot $ \_ -> do
+    a <- m
+    return a
+
 getConfig :: (Monad m) => TgBot m Config
 getConfig = TgBot $ \c -> return c
-
-lift :: (Monad m) => m a -> TgBot m a
-lift m = TgBot $ \_ -> do
-  a <- m
-  return a
 
 hoist :: (Monad m) => (m a -> n a) -> TgBot m a -> TgBot n a
 hoist f a = TgBot $ \c -> f $ runTgBot a c
