@@ -2,6 +2,8 @@
 
 module Utils where
 
+import Control.Monad
+import Control.Monad.Identity
 import Data.ByteString
 import Data.ByteString.Conversion
 import qualified Data.Text as T
@@ -20,6 +22,9 @@ assertM _ (Just val) = val
 
 assertM' :: Maybe t -> t
 assertM' = assertM "This should never happen"
+
+generalize :: Monad m => Identity a -> m a
+generalize = return . runIdentity
 
 -- Parse arguments passed to a bot command
 --   /cmd_name arg1 arg2 "some argument with spaces" "I want \"quotation marks\" inside it!" arg5 arg6 ...
@@ -52,26 +57,6 @@ parseArgs' str cur _ insideQuote arr =
     parseArgs' (T.drop 1 str) (T.snoc cur c) c insideQuote arr
   where
     c = T.head str
-
-apiURL :: T.Text -> T.Text -> T.Text
-apiURL token api = T.concat [baseURL, token, "/", api]
-  where baseURL = "https://api.telegram.org/bot"
-
--- Build a GET Request for Telegram API
-apiGet :: (ToByteString a) => T.Text -> T.Text -> [(ByteString, Maybe a)] -> Request
-apiGet token api qs =
-    setRequestQueryString (toQS qs) req
-  where
-    url = apiURL token api
-    req = parseRequest_ $ "GET " ++ T.unpack url
-
--- Build a POST Request for Telegram API
-apiPost :: (ToByteString a) => T.Text -> T.Text -> [(ByteString, a)] -> Request
-apiPost token api opt =
-    urlEncodedBody (toBody opt) req
-  where
-    url = apiURL token api
-    req = parseRequest_ $ "POST " ++ T.unpack url
 
 -- Convert from (ByteString, something) to (ByteString, Maybe ByteString) which is required by HTTP's QueryString
 toQS :: (ToByteString a) => [(ByteString, Maybe a)] -> [(ByteString, Maybe ByteString)]
