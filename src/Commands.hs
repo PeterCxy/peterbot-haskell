@@ -3,6 +3,8 @@
 module Commands where
 
 import Control.Concurrent.Async
+import Control.Monad.Trans.Class
+import Control.Monad.Trans.Maybe
 import qualified Data.Text as T
 import Data.UUID
 import Types
@@ -23,22 +25,22 @@ registerCommands config bus = do
     -- List of commands and their corresponding functions
     cmds = [
       ("hello", cmdHello)]
-    subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> Maybe (IO ())
+    subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT IO ()
     subscriber pair bus ev = do
-      msg <- message ev
-      txt <- text msg
+      msg <- MaybeT $ return $ message ev -- Lift Maybe into MaybeT
+      txt <- MaybeT $ return $ text msg
       let args = parseArgs txt
       if (length args /= 0) && (head args == T.concat ["/", T.pack (fst pair)])
-        then return $ snd pair config bus msg args
-        else return $ return () -- Remeber this is Maybe (IO ()), so we need two `return`s
+        then lift $ snd pair config bus msg args
+        else lift $ return () -- Pretend that we have done some IO work
 
     reg :: (String, Command) -> IO ()
     reg pair = do
       _ <- subscribe bus $ \_ b ev -> do
-        -- Defer the work to another function wrapped with Maybe monad
+        -- Defer the work to another function wrapped with MaybeT
         -- Otherwise we will have to use bunches of case-of
-        let m = subscriber pair b ev
-        defVal m $ return () -- Force unwrap the Maybe monad for evaluation
+        m <- runMaybeT $ subscriber pair b ev -- IO (Maybe ())
+        return $ defVal m $ () -- Force unwrap the inner Maybe monad
       return ()
 
 cmdHello :: Command
