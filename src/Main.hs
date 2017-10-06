@@ -28,7 +28,6 @@ main = do
     runTgBot (registerSubscribers bus) config
     --runBus bus
     (async $ runTgBot (fetchUpdates bus $ -1) config) >>= wait
-    return ()
   where
     confFile = "config.json"
     openFail :: IOError -> IO (String)
