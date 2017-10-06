@@ -58,6 +58,7 @@ invalidArgument :: Command
 invalidArgument _ msg (cmd:_) = do
   _ <- sendMessage (Types.chat_id $ chat msg) $ "Invalid argument for " ++ T.unpack cmd
   return ()
+invalidArgument _ _ _ = fail "What the heck?"
 
 cmdHello :: Command
 cmdHello _ msg ["/hello"] = do

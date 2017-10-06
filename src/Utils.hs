@@ -27,6 +27,9 @@ assertM' = assertM "This should never happen"
 generalize :: Monad m => Identity a -> m a
 generalize = return . runIdentity
 
+-- Lift Maybe into MaybeT
+-- Thus we can use Maybe inside MaybeT m
+-- Just a combination of the MaybeT constructor and the return function
 liftMaybe :: (Monad m) => Maybe a -> MaybeT m a
 liftMaybe = MaybeT . return
 
