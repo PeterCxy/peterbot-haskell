@@ -15,6 +15,12 @@ import TgMonad
 
 type Command = EventBus TgUpdate -> TgMessage -> [T.Text] -> TgBot IO ()
 
+isCommand :: String -> [T.Text] -> Maybe [T.Text]
+isCommand cmd args =
+  if (length args /= 0) && (head args == T.concat ["/", T.pack cmd]) -- TODO: support commands like /cmd@bot_name
+    then Just args
+    else Nothing
+
 -- Register commands
 -- Command messages should be in the following format:
 --   /cmd_name arg1 arg2 arg3 ....
@@ -34,12 +40,9 @@ registerCommands bus = do
       msg <- liftMaybe $ message ev -- Lift Maybe into MaybeT
       txt <- liftMaybe $ text msg
       config <- lift getConfig
-      let args = parseArgs txt
-      if (length args /= 0) && (head args == T.concat ["/", T.pack (fst pair)])
-        then do
-          _ <- liftIO $ async $ runTgBot (snd pair bus msg args) config -- Spawn a new thread by default and pass the telegram arguments
-          return ()
-        else liftMaybe Nothing -- Do nothing otherwise
+      args <- liftMaybe $ isCommand (fst pair) $ parseArgs txt -- TODO: Don't even parse for non-command messages
+      _ <- liftIO $ async $ runTgBot (snd pair bus msg args) config -- Spawn a new thread by default and pass the telegram arguments
+      return ()
 
     reg :: (String, Command) -> TgBot IO ()
     reg pair = do
