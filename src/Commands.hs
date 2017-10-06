@@ -26,7 +26,9 @@ registerCommands bus = do
   where
     -- List of commands and their corresponding functions
     cmds = [
-      ("hello", cmdHello)]
+      ("hello", cmdHello),
+      ("myId", cmdMyId),
+      ("chatId", cmdChatId)]
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
     subscriber pair bus ev = do
       msg <- MaybeT $ return $ message ev -- Lift Maybe into MaybeT
@@ -49,10 +51,29 @@ registerCommands bus = do
         return $ defVal m $ () -- Force unwrap the inner Maybe monad
       return ()
 
+invalidArgument :: Command
+invalidArgument _ msg (cmd:_) = do
+  _ <- sendMessage (Types.chat_id $ chat msg) $ "Invalid argument for " ++ T.unpack cmd
+  return ()
+
 cmdHello :: Command
 cmdHello _ msg ["/hello"] = do
-  _ <- sendMessage (Types.id $ chat msg) "Hello!"
+  _ <- sendMessage (Types.chat_id $ chat msg) "Hello!"
   return ()
-cmdHello _ msg _ = do
-  _ <- sendMessage (Types.id $ chat msg) "Hello but I do not take any argument, sorry."
-  return ()
+cmdHello bus msg list = invalidArgument bus msg list
+
+cmdMyId :: Command
+cmdMyId _ msg ["/myId"] = do
+    _ <- sendMessage (Types.chat_id $ chat msg) $ "Your ID: " ++ idStr
+    return ()
+  where
+    idStr = show $ defVal (fmap user_id $ from_user msg) $ -1
+cmdMyId bus msg list = invalidArgument bus msg list
+
+cmdChatId :: Command
+cmdChatId _ msg ["/chatId"] = do
+    _ <- sendMessage (Types.chat_id $ chat msg) $ "Chat ID: " ++ idStr
+    return ()
+  where
+    idStr = show $ chat_id $ chat msg
+cmdChatId bus msg list = invalidArgument bus msg list

@@ -48,7 +48,8 @@ instance FromJSON TgUpdate where
 data TgMessage = TgMessage {
   message_id :: Int,
   chat :: TgChat,
-  text :: Maybe T.Text
+  text :: Maybe T.Text,
+  from_user :: Maybe TgUser
 }
 
 instance TgResult TgMessage where
@@ -59,11 +60,20 @@ instance FromJSON TgMessage where
     <$> m .: "message_id"
     <*> m .: "chat"
     <*> m .:? "text"
+    <*> m .:? "from"
 
 data TgChat = TgChat {
-  id :: Int
+  chat_id :: Int
 }
 
 instance FromJSON TgChat where
   parseJSON = withObject "TgChat" $ \c -> TgChat
     <$> c .: "id"
+
+data TgUser = TgUser {
+  user_id :: Int
+}
+
+instance FromJSON TgUser where
+  parseJSON = withObject "TgUser" $ \u -> TgUser
+   <$> u .: "id"
