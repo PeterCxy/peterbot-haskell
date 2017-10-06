@@ -31,15 +31,15 @@ registerCommands bus = do
       ("chatId", cmdChatId)]
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
     subscriber pair bus ev = do
-      msg <- MaybeT $ return $ message ev -- Lift Maybe into MaybeT
-      txt <- MaybeT $ return $ text msg
+      msg <- liftMaybe $ message ev -- Lift Maybe into MaybeT
+      txt <- liftMaybe $ text msg
       config <- lift getConfig
       let args = parseArgs txt
       if (length args /= 0) && (head args == T.concat ["/", T.pack (fst pair)])
         then do
           _ <- liftIO $ async $ runTgBot (snd pair bus msg args) config -- Spawn a new thread by default and pass the telegram arguments
           return ()
-        else liftIO $ return () -- Pretend that we have done some IO work
+        else liftMaybe Nothing -- Do nothing otherwise
 
     reg :: (String, Command) -> TgBot IO ()
     reg pair = do

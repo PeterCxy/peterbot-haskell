@@ -4,6 +4,7 @@ module Utils where
 
 import Control.Monad
 import Control.Monad.Identity
+import Control.Monad.Trans.Maybe
 import Data.ByteString
 import Data.ByteString.Conversion
 import qualified Data.Text as T
@@ -25,6 +26,9 @@ assertM' = assertM "This should never happen"
 
 generalize :: Monad m => Identity a -> m a
 generalize = return . runIdentity
+
+liftMaybe :: (Monad m) => Maybe a -> MaybeT m a
+liftMaybe = MaybeT . return
 
 -- Parse arguments passed to a bot command
 --   /cmd_name arg1 arg2 "some argument with spaces" "I want \"quotation marks\" inside it!" arg5 arg6 ...
