@@ -36,8 +36,8 @@ registerCommands bus = do
     cmds = [
       ("hello", cmdHello),
       ("info", cmdInfo),
-      ("myId", cmdMyId),
-      ("chatId", cmdChatId)]
+      ("my_id", cmdMyId),
+      ("chat_id", cmdChatId)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
     subscriber pair bus ev = do
@@ -79,15 +79,15 @@ cmdInfo _ msg ["info"] = do
 \Available commands:\n\
 \    /hello - say Hello\n\
 \    /info - print this information\n\
-\    /myId - get your Telegram ID (internal ID)\n\
-\    /chatId - get the internal ID of the current chat / group / channel\
+\    /my_id - get your Telegram ID (internal ID)\n\
+\    /chat_id - get the internal ID of the current chat / group / channel\
 \" (admin config)
   _ <- replyMessage msg info
   return ()
 cmdInfo bus msg list = invalidArgument bus msg list
 
 cmdMyId :: Command
-cmdMyId _ msg ["myId"] = do
+cmdMyId _ msg ["my_id"] = do
     _ <- replyMessage msg $ "Your ID: " ++ idStr
     return ()
   where
@@ -95,7 +95,7 @@ cmdMyId _ msg ["myId"] = do
 cmdMyId bus msg list = invalidArgument bus msg list
 
 cmdChatId :: Command
-cmdChatId _ msg ["chatId"] = do
+cmdChatId _ msg ["chat_id"] = do
     _ <- sendMessage (Types.chat_id $ chat msg) $ "Chat ID: " ++ idStr
     return ()
   where
