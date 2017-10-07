@@ -18,8 +18,9 @@ type Command = EventBus TgUpdate -> TgMessage -> [T.Text] -> TgBot IO ()
 couldBeCommand :: T.Text -> Maybe T.Text
 couldBeCommand str = ifM str $ (T.head str) == '/'
 
-isCommand :: String -> [T.Text] -> Maybe [T.Text]
-isCommand cmd args = ifM args $ (length args /= 0) && (head args == T.concat ["/", T.pack cmd]) -- TODO: support commands like /cmd@bot_name
+isCommand :: String -> T.Text -> [T.Text] -> Maybe [T.Text]
+isCommand cmd botName args = ifM args $ (length args /= 0)
+  && (head args == T.concat ["/", T.pack cmd] || head args == T.concat ["/", T.pack cmd, "@", botName])
 
 -- Register commands
 -- Command messages should be in the following format:
@@ -40,8 +41,8 @@ registerCommands bus = do
       msg <- liftMaybe $ message ev -- Lift Maybe into MaybeT
       txt <- liftMaybe $ (text msg >>= couldBeCommand)
       config <- lift getConfig
-      args <- liftMaybe $ isCommand (fst pair) $ parseArgs txt -- TODO: Don't even parse for non-command messages
-      _ <- liftIO $ async $ runTgBot (snd pair bus msg args) config -- Spawn a new thread by default and pass the telegram arguments
+      args <- liftMaybe $ isCommand (fst pair) (bot_name config) $ parseArgs txt -- TODO: Don't even parse for non-command messages
+      _ <- liftIO $ async $ runTgBot (snd pair bus msg $ (T.pack $ fst pair) : tail args) config -- Spawn a new thread by default and pass the telegram arguments
       return ()
 
     reg :: (String, Command) -> TgBot IO ()
@@ -61,13 +62,13 @@ invalidArgument _ msg (cmd:_) = do
 invalidArgument _ _ _ = fail "What the heck?"
 
 cmdHello :: Command
-cmdHello _ msg ["/hello"] = do
+cmdHello _ msg ["hello"] = do
   _ <- sendMessage (Types.chat_id $ chat msg) "Hello!"
   return ()
 cmdHello bus msg list = invalidArgument bus msg list
 
 cmdMyId :: Command
-cmdMyId _ msg ["/myId"] = do
+cmdMyId _ msg ["myId"] = do
     _ <- replyMessage msg $ "Your ID: " ++ idStr
     return ()
   where
@@ -75,7 +76,7 @@ cmdMyId _ msg ["/myId"] = do
 cmdMyId bus msg list = invalidArgument bus msg list
 
 cmdChatId :: Command
-cmdChatId _ msg ["/chatId"] = do
+cmdChatId _ msg ["chatId"] = do
     _ <- sendMessage (Types.chat_id $ chat msg) $ "Chat ID: " ++ idStr
     return ()
   where

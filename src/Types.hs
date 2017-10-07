@@ -7,13 +7,15 @@ import qualified Data.Text as T
 
 data Config = Config {
   token :: T.Text,
-  admin :: T.Text
+  admin :: T.Text,
+  bot_name :: T.Text
 }
 
 instance FromJSON Config where
   parseJSON = withObject "Config" $ \c -> Config
     <$> c .: "token"
     <*> c .: "admin"
+    <*> c .: "bot_name"
 
 class TgResult t where
   tid :: t -> Int
