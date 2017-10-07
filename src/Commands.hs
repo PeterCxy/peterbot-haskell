@@ -8,6 +8,7 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import qualified Data.Text as T
 import Data.UUID
+import Text.Printf
 import Types
 import EventBus
 import Utils
@@ -34,8 +35,10 @@ registerCommands bus = do
     -- List of commands and their corresponding functions
     cmds = [
       ("hello", cmdHello),
+      ("info", cmdInfo),
       ("myId", cmdMyId),
       ("chatId", cmdChatId)]
+
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
     subscriber pair bus ev = do
       msg <- liftMaybe $ message ev -- Lift Maybe into MaybeT
@@ -66,6 +69,22 @@ cmdHello _ msg ["hello"] = do
   _ <- sendMessage (Types.chat_id $ chat msg) "Hello!"
   return ()
 cmdHello bus msg list = invalidArgument bus msg list
+
+cmdInfo :: Command
+cmdInfo _ msg ["info"] = do
+  config <- getConfig
+  let info = printf "\
+\Hello, this is the bot of @%s, written in Haskell.\n\
+\Source code available at https://github.com/PeterCxy/peterbot-haskell\n\
+\Available commands:\n\
+\    /hello - say Hello\n\
+\    /info - print this information\n\
+\    /myId - get your Telegram ID (internal ID)\n\
+\    /chatId - get the internal ID of the current chat / group / channel\
+\" (admin config)
+  _ <- replyMessage msg info
+  return ()
+cmdInfo bus msg list = invalidArgument bus msg list
 
 cmdMyId :: Command
 cmdMyId _ msg ["myId"] = do
