@@ -19,7 +19,7 @@ couldBeCommand :: T.Text -> Maybe T.Text
 couldBeCommand str = ifM str $ (T.head str) == '/'
 
 isCommand :: String -> T.Text -> [T.Text] -> Maybe [T.Text]
-isCommand cmd botName args = ifM args $ (length args /= 0)
+isCommand cmd botName args = ifM ((T.pack cmd) : tail args) $ (length args /= 0)
   && (head args == T.concat ["/", T.pack cmd] || head args == T.concat ["/", T.pack cmd, "@", botName])
 
 -- Register commands
@@ -42,7 +42,7 @@ registerCommands bus = do
       txt <- liftMaybe $ (text msg >>= couldBeCommand)
       config <- lift getConfig
       args <- liftMaybe $ isCommand (fst pair) (bot_name config) $ parseArgs txt -- TODO: Don't even parse for non-command messages
-      _ <- liftIO $ async $ runTgBot (snd pair bus msg $ (T.pack $ fst pair) : tail args) config -- Spawn a new thread by default and pass the telegram arguments
+      _ <- liftIO $ async $ runTgBot (snd pair bus msg $ args) config -- Spawn a new thread by default and pass the telegram arguments
       return ()
 
     reg :: (String, Command) -> TgBot IO ()
