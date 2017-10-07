@@ -24,6 +24,10 @@ assertM _ (Just val) = val
 assertM' :: Maybe t -> t
 assertM' = assertM "This should never happen"
 
+ifM :: a -> Bool -> Maybe a
+ifM a True = Just a
+ifM _ False = Nothing
+
 generalize :: Monad m => Identity a -> m a
 generalize = return . runIdentity
 
