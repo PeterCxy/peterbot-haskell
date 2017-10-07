@@ -85,7 +85,7 @@ getUpdates offset = do
     url <- liftIdentity $ apiGet "getUpdates" [("offset", Just (offset)), ("timeout", Just (timeout))]
     fmap getResponseBody $ httpJSON url
   where
-    timeout = 300
+    timeout = 30
 
 sendMessage :: Int -> String -> TgBot IO (TgResponse TgMessage)
 sendMessage target msg = do
