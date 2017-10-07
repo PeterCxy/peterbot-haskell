@@ -91,3 +91,11 @@ sendMessage :: Int -> String -> TgBot IO (TgResponse TgMessage)
 sendMessage target msg = do
   url <- liftIdentity $ apiPost "sendMessage" [("chat_id", show target), ("text", msg)]
   fmap getResponseBody $ httpJSON url
+
+replyMessage :: TgMessage -> String -> TgBot IO (TgResponse TgMessage)
+replyMessage original msg = do
+    url <- liftIdentity $ apiPost "sendMessage" [
+      ("chat_id", show $ chat_id $ chat original),
+      ("text", msg),
+      ("reply_to_message_id", show $ message_id original)]
+    fmap getResponseBody $ httpJSON url

@@ -68,7 +68,7 @@ cmdHello bus msg list = invalidArgument bus msg list
 
 cmdMyId :: Command
 cmdMyId _ msg ["/myId"] = do
-    _ <- sendMessage (Types.chat_id $ chat msg) $ "Your ID: " ++ idStr
+    _ <- replyMessage msg $ "Your ID: " ++ idStr
     return ()
   where
     idStr = show $ defVal (fmap user_id $ from_user msg) $ -1
