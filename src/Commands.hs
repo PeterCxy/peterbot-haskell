@@ -37,7 +37,8 @@ registerCommands bus = do
       ("hello", cmdHello),
       ("info", cmdInfo),
       ("my_id", cmdMyId),
-      ("chat_id", cmdChatId)]
+      ("chat_id", cmdChatId),
+      ("print", cmdPrint)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
     subscriber pair bus ev = do
@@ -80,7 +81,8 @@ cmdInfo _ msg ["info"] = do
 \    /hello - say Hello\n\
 \    /info - print this information\n\
 \    /my_id - get your Telegram ID (internal ID)\n\
-\    /chat_id - get the internal ID of the current chat / group / channel\
+\    /chat_id - get the internal ID of the current chat / group / channel\n\
+\    /print - print the arguments as-is\
 \" (admin config)
   _ <- replyMessage msg info
   return ()
@@ -101,3 +103,9 @@ cmdChatId _ msg ["chat_id"] = do
   where
     idStr = show $ chat_id $ chat msg
 cmdChatId bus msg list = invalidArgument bus msg list
+
+cmdPrint :: Command
+cmdPrint bus msg ["print"] = invalidArgument bus msg ["print"]
+cmdPrint _ msg args = do
+  _ <- sendMessage (Types.chat_id $ chat msg) $ (T.unpack . T.unlines . tail) args
+  return ()
