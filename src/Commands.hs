@@ -77,13 +77,15 @@ cmdInfo _ msg ["info"] = do
   let info = printf "\
 \Hello, this is the bot of @%s, written in Haskell.\n\
 \Source code available at https://github.com/PeterCxy/peterbot-haskell\n\
+\To invoke a command: /cmd_name[@%s] arg1 arg2 \"some argument with spaces\" ....\n\
+\[] means that the part inside it is optional\n\
 \Available commands:\n\
 \    /hello - say Hello\n\
 \    /info - print this information\n\
 \    /my_id - get your Telegram ID (internal ID)\n\
 \    /chat_id - get the internal ID of the current chat / group / channel\n\
 \    /print - print the arguments as-is\
-\" (admin config)
+\" (admin config) (bot_name config)
   _ <- replyMessage msg info
   return ()
 cmdInfo bus msg list = invalidArgument bus msg list
