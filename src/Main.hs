@@ -39,16 +39,13 @@ main = do
 fetchUpdates :: EventBus TgUpdate -> Int -> TgBot IO ()
 fetchUpdates bus index = do
     res <- catch' (getUpdates $ index + 1) fetchFail :: TgBot IO (TgResponse [TgUpdate])
-    case ok res of
-      False -> next index -- Not okay (maybe exception), retry this request
-      True -> case result res of
-        Nothing -> next index -- Nothing returned as Result, retry
-        Just upd -> do
-          --print $ length upd
-          liftIO $ mapM (publish bus) upd
-          if length upd == 0
-            then next index -- No result received, retry
-            else next $ update_id $ last upd
+    -- Default to [] for failed cases
+    -- ifM: return Nothing if the response is not Okay
+    let upd = defVal (result res >>= \r -> ifM r $ ok res) []
+    liftIO $ mapM (publish bus) upd
+    if length upd == 0
+      then next index -- No result received, retry
+      else next $ update_id $ last upd
   where
     next :: Int -> TgBot IO ()
     next newIndex = fetchUpdates bus newIndex
