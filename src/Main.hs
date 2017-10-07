@@ -54,14 +54,14 @@ fetchUpdates bus index = do
     next newIndex = fetchUpdates bus newIndex
     fetchFail :: SomeException -> TgBot IO (TgResponse [TgUpdate])
     fetchFail ex = do
-      liftIO $ putStrLn "Failed to fetch updates from Telegram. Skipping."
+      liftIO $ putStrLn "No message received before timeout or there were network issues. Continuing."
       -- Return a pseudo value
       return $ TgResponse False Nothing
 
 registerSubscribers :: EventBus TgUpdate -> TgBot IO ()
 registerSubscribers bus = do
   liftIO $ subscribe bus $ \_ _ ev -> do
-    print "Received Message"
+    putStrLn "Received Message"
     print $ update_id ev
     --subscribe bus $ \_ _ _ -> print "My new subscriber!"
   registerCommands bus
