@@ -6,6 +6,7 @@ import Control.Exception
 import Control.Monad
 import Control.Monad.Identity
 import Control.Monad.Trans
+import Control.Monad.Trans.Maybe
 import Control.Monad.IO.Class
 import Data.ByteString
 import Data.ByteString.Conversion
@@ -99,3 +100,14 @@ replyMessage original msg = do
       ("text", msg),
       ("reply_to_message_id", show $ message_id original)]
     fmap getResponseBody $ httpJSON url
+
+isAdmin :: Maybe TgUser -> TgBotI Bool
+isAdmin u = do
+  res <- liftIdentity $ runMaybeT $ isAdmin' u
+  return $ defVal res False
+
+isAdmin' :: Maybe TgUser -> MaybeT (TgBot Identity) Bool
+isAdmin' u = do
+  user <- liftMaybe $ (u >>= user_name)
+  config <- lift $ getConfig
+  return $ user == T.unpack (admin config)

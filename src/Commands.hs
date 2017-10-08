@@ -9,6 +9,7 @@ import Control.Monad.Trans.Maybe
 import qualified Data.Text as T
 import Data.UUID
 import Text.Printf
+import Text.Read (readMaybe)
 import Types
 import EventBus
 import Utils
@@ -38,7 +39,8 @@ registerCommands bus = do
       ("info", cmdInfo),
       ("my_id", cmdMyId),
       ("chat_id", cmdChatId),
-      ("print", cmdPrint)]
+      ("print", cmdPrint),
+      ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
     subscriber pair bus ev = do
@@ -111,3 +113,16 @@ cmdPrint bus msg ["print"] = invalidArgument bus msg ["print"]
 cmdPrint _ msg args = do
   _ <- sendMessage (Types.chat_id $ chat msg) $ (T.unpack . T.unlines . tail) args
   return ()
+
+-- Secret: send to chat
+-- The admin can send a message to some chat, or echo to the sender if the chat ID is illegal
+-- /send chat_id text.... (text can contain spaces; will be rejoined in this function)
+cmdSend :: Command
+cmdSend _ msg ("send" : chatId : txt) = do
+  userIsAdmin <- liftIdentity $ isAdmin $ from_user msg
+  if userIsAdmin
+    then do
+      _ <- sendMessage (defVal (readMaybe $ T.unpack chatId) $ Types.chat_id $ chat msg) $ T.unpack $ T.unwords txt
+      return ()
+    else return ()
+cmdSend _ _ _ = return () -- Be silent. Don't tell them anything

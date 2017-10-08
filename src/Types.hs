@@ -73,9 +73,11 @@ instance FromJSON TgChat where
     <$> c .: "id"
 
 data TgUser = TgUser {
-  user_id :: Int
+  user_id :: Int,
+  user_name :: Maybe String
 }
 
 instance FromJSON TgUser where
   parseJSON = withObject "TgUser" $ \u -> TgUser
    <$> u .: "id"
+   <*> u .:? "username"
