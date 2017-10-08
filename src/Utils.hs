@@ -58,7 +58,8 @@ parseArgs' "" cur _ _ arr = cur : arr
 -- A space that is not wrapped inside any quotation mark
 parseArgs' (StartWithSpace t) cur _ False arr = parseArgs' t "" ' ' False $ cur : arr
 -- A quotation mark escaped by '\'
-parseArgs' (StartWithQuote t) cur '\\' insideQuote arr = parseArgs' t (T.snoc cur '"') '"' insideQuote arr
+-- Drop the previous '\' and keep the quote
+parseArgs' (StartWithQuote t) cur '\\' insideQuote arr = parseArgs' t (T.snoc (T.init cur) '"') '"' insideQuote arr
 -- Beginning a quotation
 parseArgs' (StartWithQuote t) "" _ False arr = parseArgs' t "" '"' True arr
 -- Ending a quotation
