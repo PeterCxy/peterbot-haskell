@@ -63,7 +63,7 @@ registerCommands bus = do
 
 invalidArgument :: Command
 invalidArgument _ msg (cmd:_) = do
-  _ <- sendMessage (Types.chat_id $ chat msg) $ "Invalid argument for " ++ T.unpack cmd
+  _ <- replyMessage msg $ "Invalid argument for " ++ T.unpack cmd
   return ()
 invalidArgument _ _ _ = fail "What the heck?"
 
