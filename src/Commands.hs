@@ -8,12 +8,14 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import qualified Data.Text as T
 import Data.UUID
+import Data.List as L (intercalate)
 import Text.Printf
 import Text.Read (readMaybe)
 import Types
 import EventBus
 import Utils
 import TgMonad
+import Calc
 
 type Command = EventBus TgUpdate -> TgMessage -> [T.Text] -> TgBot IO ()
 
@@ -40,6 +42,7 @@ registerCommands bus = do
       ("my_id", cmdMyId),
       ("chat_id", cmdChatId),
       ("print", cmdPrint),
+      ("rpn", cmdRPN),
       ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
@@ -86,7 +89,8 @@ cmdInfo _ msg ["info"] = do
 \    /info - print this information\n\
 \    /my_id - get your Telegram ID (internal ID)\n\
 \    /chat_id - get the internal ID of the current chat / group / channel\n\
-\    /print - print the arguments as-is\
+\    /print - print the arguments as-is\n\
+\    /rpn - Convert an infix expression to Reverse-Polish Notation (RPN)\
 \" (admin config) (bot_name config)
   _ <- replyMessage msg info
   return ()
@@ -113,6 +117,18 @@ cmdPrint bus msg ["print"] = invalidArgument bus msg ["print"]
 cmdPrint _ msg args = do
   _ <- sendMessage (Types.chat_id $ chat msg) $ (T.unpack . T.unlines . tail) args
   return ()
+
+cmdRPN :: Command
+cmdRPN bus msg ["rpn"] = invalidArgument bus msg ["rpn"]
+cmdRPN _ msg args = do
+  let res = infix2RPN $ (T.unpack . T.unwords . tail) args
+  case res of
+    Nothing -> do
+      _ <- replyMessage msg "Error parsing infix expression (maybe mismatched parentheses?)"
+      return ()
+    Just r -> do
+      _ <- replyMessage msg $ L.intercalate " " r
+      return ()
 
 -- Secret: send to chat
 -- The admin can send a message to some chat, or echo to the sender if the chat ID is illegal
