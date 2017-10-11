@@ -2,6 +2,7 @@
 
 module Calc where
 
+import Control.Applicative (liftA2)
 import Data.Char (isSpace, isDigit)
 import Math.Gamma
 import Text.Read (readEither)
@@ -240,3 +241,37 @@ readEither' :: String -> Either String Double
 readEither' str = case readEither str of
   Left _ -> Left $ "Illegal operand " ++ str
   Right res -> Right res
+
+instance Num b => Num (Either a b) where
+  negate = fmap negate
+  (+) = liftA2 (+)
+  (*) = liftA2 (*)
+  fromInteger = pure . fromInteger
+  abs = fmap abs
+  signum = fmap signum
+
+instance Fractional b => Fractional (Either a b) where
+  fromRational = Right . fromRational
+  (/) = liftA2 (/)
+
+-- Note: the following functions are tailored for our need in this module
+-- That is, the evaluation process return a Either String Double which may emit errors on execution
+
+-- Calculate the derivative value at x of function f(x)
+derivative1 :: (Double -> Either String Double) -> Double -> Either String Double
+derivative1 f x = let
+    h = 0.00000001
+  in
+    ((f $ x + h) - (f $ x - h)) / (2 * (Right h))
+
+-- Solve f(x) = 0 by Newton's method
+solveNewton :: (Double -> Either String Double) -> Int -> Double -> Either String Double
+solveNewton _ 0 x = Right x
+solveNewton f count x = do
+  xn <- (Right x) - (f x) / (derivative1 f x)
+  solveNewton f (count - 1) xn
+
+solveNewton_ :: (Double -> Either String Double) -> Int -> String -> Either String Double
+solveNewton_ f count x = do
+  x' <- readEither' x
+  solveNewton f count x'

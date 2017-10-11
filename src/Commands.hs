@@ -45,6 +45,7 @@ registerCommands bus = do
       ("rpn", cmdRPN),
       ("calc", cmdCalc),
       ("eval1", cmdEval1),
+      ("solve", cmdSolve),
       ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
@@ -135,28 +136,30 @@ cmdRPN _ msg args = do
 
 cmdCalc :: Command
 cmdCalc bus msg ["calc"] = invalidArgument bus msg ["calc"]
-cmdCalc _ msg args = do
-  let res = calc $ (T.unpack . T.unwords . tail) args
-  case res of
-    Left err -> do
-      _ <- replyMessage msg ("Error: " ++ err)
-      return ()
-    Right r -> do
-      _ <- replyMessage msg ("Result: " ++ (show r))
-      return ()
+cmdCalc _ msg args =
+  processCalcResult msg $ calc $ (T.unpack . T.unwords . tail) args
 
 cmdEval1 :: Command
 cmdEval1 bus msg ["eval1"] = invalidArgument bus msg ["eval1"]
 cmdEval1 bus msg ("eval1":x:[]) = invalidArgument bus msg ["eval1"]
-cmdEval1 bus msg ("eval1":x:str) = do
-  let res = eval1_ ((T.unpack . T.unwords) str) $ T.unpack x
-  case res of
-    Left err -> do
-      _ <- replyMessage msg ("Error: " ++ err)
-      return ()
-    Right r -> do
-      _ <- replyMessage msg ("Result: " ++ (show r))
-      return ()
+cmdEval1 _ msg ("eval1":x:str) =
+  processCalcResult msg $ eval1_ ((T.unpack . T.unwords) str) $ T.unpack x
+
+cmdSolve :: Command
+cmdSolve bus msg ["solve"] = invalidArgument bus msg ["solve"]
+cmdSolve bus msg ("solve":x:[]) = invalidArgument bus msg ["solve"]
+cmdSolve _ msg ("solve":x:str) =
+  processCalcResult msg $ solveNewton_ (eval1 ((T.unpack . T.unwords) str)) 30 $ T.unpack x
+
+-- Helper function to process the result of calculations
+processCalcResult :: TgMessage -> Either String Double -> TgBot IO ()
+processCalcResult msg res = case res of
+  Left err -> do
+    _ <- replyMessage msg ("Error: " ++ err)
+    return ()
+  Right r -> do
+    _ <- replyMessage msg ("Result: " ++ (show r))
+    return ()
 
 -- Secret: send to chat
 -- The admin can send a message to some chat, or echo to the sender if the chat ID is illegal
