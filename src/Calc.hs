@@ -136,9 +136,18 @@ popEverything opt opr = let
 binaryOperators :: [String]
 binaryOperators = ["=", "+", "-", "*", "/", "^"]
 
+unaryOperators :: [String]
+unaryOperators = ["sin", "cos"]
+
 isBinaryOperator :: String -> Maybe String
 isBinaryOperator operator =
   if elem operator binaryOperators
+    then Just operator
+    else Nothing
+
+isUnaryOperator :: String -> Maybe String
+isUnaryOperator operator =
+  if elem operator unaryOperators
     then Just operator
     else Nothing
 
@@ -174,6 +183,17 @@ calcRPN' ((isBinaryOperator -> Just o):rpn) stack = do
       "/" -> Right (/)
       "^" -> Right (**)
       _ -> Left $ "Unsupported operator " ++ o
+calcRPN' ((isUnaryOperator -> Just o):_) [] = Left $ "Operator " ++ o ++ " needs one operand but none is provided."
+calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
+    f <- func
+    r' <- calculateUnary f (head stack)
+    calcRPN' rpn ((show r'):(tail stack))
+  where
+    func :: Either String (Double -> Double)
+    func = case o of
+      "sin" -> Right sin
+      "cos" -> Right cos
+      _ -> Left $ "Unsupported operator " ++ o
 calcRPN' (n:rpn) stack = calcRPN' rpn (n:stack)
 
 calculateBinary :: (Double -> Double -> Double) -> String -> String -> Either String Double
@@ -181,6 +201,11 @@ calculateBinary op n1 n2 = do
   num1 <- readEither' n1
   num2 <- readEither' n2
   return $ op num1 num2
+
+calculateUnary :: (Double -> Double) -> String -> Either String Double
+calculateUnary op n = do
+  num <- readEither' n
+  return $ op num
 
 readEither' :: String -> Either String Double
 readEither' str = case readEither str of
