@@ -91,7 +91,8 @@ cmdInfo _ msg ["info"] = do
 \    /my_id - get your Telegram ID (internal ID)\n\
 \    /chat_id - get the internal ID of the current chat / group / channel\n\
 \    /print - print the arguments as-is\n\
-\    /rpn - Convert an infix expression to Reverse-Polish Notation (RPN)\
+\    /rpn - Convert an infix expression to Reverse-Polish Notation (RPN)\n\
+\    /calc - A simple calculator (Please use (0-x) instead of (-x) as the negative sign for now)\n\
 \" (admin config) (bot_name config)
   _ <- replyMessage msg info
   return ()
