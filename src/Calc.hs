@@ -115,14 +115,14 @@ infix2RPN' (c:e) " " opt opr = infix2RPN' e [c] opt opr
 -- Everything else
 infix2RPN' (c:e) cur opt opr = infix2RPN' e (cur ++ [c]) opt opr
 
--- Pop all the left-associative operators with greater precendence than the current one
+-- Pop all the operators with greater precendence than the current one if the current one is left-associative
 -- And push them to the output queue
 popGreaterOperators :: String -> [String] -> [String] -> ([String], [String])
 popGreaterOperators _ opt [] = (opt, []) -- empty
 popGreaterOperators cur opt opr = let
     lastOperator = head opr
   in
-    if (leftAssociative lastOperator) && ((precedence cur) <= (precedence lastOperator))
+    if (leftAssociative cur) && ((precedence cur) <= (precedence lastOperator))
       then popGreaterOperators cur (lastOperator:opt) (tail opr)
       else (opt, opr)
 
