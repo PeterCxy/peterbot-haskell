@@ -3,13 +3,14 @@
 module Calc where
 
 import Data.Char (isSpace, isDigit)
+import Math.Gamma
 import Text.Read (readEither)
 
 data TokenType = Space | Digit | BasicOperator | Variable deriving (Eq, Enum)
 
 -- Supported operators
 operators :: [String]
-operators = ["=", "+", "-", "*", "/", "^", "sin", "cos"]
+operators = ["=", "+", "-", "*", "/", "^", "!", "sin", "cos"]
 
 brackets :: [String]
 brackets = ["(", ")"]
@@ -44,6 +45,7 @@ precedence o = case o of
   "^" -> 3
   "sin" -> 4
   "cos" -> 4
+  "!" -> 5
   _ -> -1000
 
 leftAssociative  :: String -> Bool
@@ -138,7 +140,7 @@ binaryOperators :: [String]
 binaryOperators = ["=", "+", "-", "*", "/", "^"]
 
 unaryOperators :: [String]
-unaryOperators = ["sin", "cos"]
+unaryOperators = ["sin", "cos", "!"]
 
 isBinaryOperator :: String -> Maybe String
 isBinaryOperator operator =
@@ -194,6 +196,7 @@ calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
     func = case o of
       "sin" -> Right sin
       "cos" -> Right cos
+      "!" -> Right $ \n -> gamma $ n + 1
       _ -> Left $ "Unsupported operator " ++ o
 calcRPN' (n:rpn) stack = calcRPN' rpn (n:stack)
 
