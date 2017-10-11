@@ -171,6 +171,7 @@ calcRPN' :: [String] -> [String] -> Either String Double
 -- calcRPN' rpn stack result = Just result
 calcRPN' [] [] = Left "No result arising from the expression"
 calcRPN' [] [r] = readEither' r
+calcRPN' [] _ = Left "Evaluation finished but there's item left in the stack"
 calcRPN' ((isBinaryOperator -> Just o):_) [] = Left $ "Operator " ++ o ++ " needs two operands but none is provided."
 calcRPN' ((isBinaryOperator -> Just o):_) (_:[]) = Left $ "Operator " ++ o ++ " needs two operands but only one is provided."
 calcRPN' ((isBinaryOperator -> Just o):rpn) stack = do
