@@ -53,6 +53,16 @@ leftAssociative o = case o of
   "^" -> False
   _ -> True
 
+-- Convert (-x) to (0-x)
+normalizeMinusNumbers :: String -> String
+normalizeMinusNumbers str = reverse $ normalizeMinusNumbers' str '(' ""
+
+normalizeMinusNumbers' :: String -> Char -> String -> String
+normalizeMinusNumbers' "" _ res = res
+normalizeMinusNumbers' ('-':str) '(' res = normalizeMinusNumbers' str '-' ('-':'0':res)
+normalizeMinusNumbers' (' ':str) lastChar res = normalizeMinusNumbers' str lastChar (' ':res)
+normalizeMinusNumbers' (c:str) _ res = normalizeMinusNumbers' str c (c:res)
+
 -- Normalize any infix expression to something needed by the function infix2RPN
 normalizeInfix :: String -> String
 normalizeInfix str = reverse $ normalizeInfix' str Space ""
@@ -73,7 +83,7 @@ normalizeInfix' (c:str) lastType r =
 -- Convert infix notation to reverse-polish (RPN) by shutting-yard algorithm
 -- normalize before passing to the infix2RPN' which does the actual job
 infix2RPN :: String -> Maybe [String]
-infix2RPN e = fmap reverse $ infix2RPN' ((normalizeInfix e) ++ " ") "" [] [] -- add a trailing space
+infix2RPN e = fmap reverse $ infix2RPN' ((normalizeInfix $ normalizeMinusNumbers e) ++ " ") "" [] [] -- add a trailing space
 
 -- Convert infix notation to reverse-polish (RPN) by shutting-yard algorithm
 -- This requires different types of tokens to be separated by spaces
