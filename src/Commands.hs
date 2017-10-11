@@ -43,6 +43,7 @@ registerCommands bus = do
       ("chat_id", cmdChatId),
       ("print", cmdPrint),
       ("rpn", cmdRPN),
+      ("calc", cmdCalc),
       ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
@@ -128,6 +129,18 @@ cmdRPN _ msg args = do
       return ()
     Just r -> do
       _ <- replyMessage msg $ L.intercalate " " r
+      return ()
+
+cmdCalc :: Command
+cmdCalc bus msg ["calc"] = invalidArgument bus msg ["calc"]
+cmdCalc _ msg args = do
+  let res = calc $ (T.unpack . T.unwords . tail) args
+  case res of
+    Left err -> do
+      _ <- replyMessage msg ("Error: " ++ err)
+      return ()
+    Right r -> do
+      _ <- replyMessage msg ("Result: " ++ (show r))
       return ()
 
 -- Secret: send to chat

@@ -3,6 +3,7 @@
 module Calc where
 
 import Data.Char (isSpace, isDigit)
+import Text.Read (readEither)
 
 data TokenType = Space | Digit | BasicOperator | Variable deriving (Eq, Enum)
 
@@ -131,3 +132,57 @@ popEverything opt opr = let
     if lastOperator == "(" -- Mismatched parentheses
       then Nothing
       else popEverything (lastOperator:opt) (tail opr)
+
+binaryOperators :: [String]
+binaryOperators = ["=", "+", "-", "*", "/", "^"]
+
+isBinaryOperator :: String -> Maybe String
+isBinaryOperator operator =
+  if elem operator binaryOperators
+    then Just operator
+    else Nothing
+
+calc :: String -> Either String Double
+calc ex = do
+    rpn <- r
+    calcRPN rpn
+  where
+    r = case infix2RPN ex of
+      Nothing -> Left $ "Parsing error (maybe mismatched parentheses?)"
+      Just result -> Right result
+
+-- Calculate the result of RPN (numbers only)
+calcRPN :: [String] -> Either String Double
+calcRPN rpn = calcRPN' rpn []
+
+calcRPN' :: [String] -> [String] -> Either String Double
+-- calcRPN' rpn stack result = Just result
+calcRPN' [] [] = Left "No result arising from the expression"
+calcRPN' [] [r] = readEither' r
+calcRPN' ((isBinaryOperator -> Just o):_) [] = Left $ "Operator " ++ o ++ " needs two operands but none is provided."
+calcRPN' ((isBinaryOperator -> Just o):_) (_:[]) = Left $ "Operator " ++ o ++ " needs two operands but only one is provided."
+calcRPN' ((isBinaryOperator -> Just o):rpn) stack = do
+    f <- func
+    r' <- calculateBinary f ((head . tail) stack) (head stack)
+    calcRPN' rpn ((show r'):((tail . tail) stack))
+  where
+    func :: Either String (Double -> Double -> Double)
+    func = case o of
+      "+" -> Right (+)
+      "-" -> Right (-)
+      "*" -> Right (*)
+      "/" -> Right (/)
+      "^" -> Right (**)
+      _ -> Left $ "Unsupported operator " ++ o
+calcRPN' (n:rpn) stack = calcRPN' rpn (n:stack)
+
+calculateBinary :: (Double -> Double -> Double) -> String -> String -> Either String Double
+calculateBinary op n1 n2 = do
+  num1 <- readEither' n1
+  num2 <- readEither' n2
+  return $ op num1 num2
+
+readEither' :: String -> Either String Double
+readEither' str = case readEither str of
+  Left _ -> Left $ "Illegal operand " ++ str
+  Right res -> Right res
