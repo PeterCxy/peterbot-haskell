@@ -174,7 +174,7 @@ calc ex = do
       Just result -> Right result
 
 -- Evaluate an expression with exactly one parameter x
-eval1 :: String -> String -> Either String Double
+eval1 :: String -> Double -> Either String Double
 eval1 ex x = eval1_ ex $ show x
 
 eval1_ :: String -> String -> Either String Double
