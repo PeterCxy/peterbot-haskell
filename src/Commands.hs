@@ -44,6 +44,7 @@ registerCommands bus = do
       ("print", cmdPrint),
       ("rpn", cmdRPN),
       ("calc", cmdCalc),
+      ("eval1", cmdEval1),
       ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
@@ -136,6 +137,19 @@ cmdCalc :: Command
 cmdCalc bus msg ["calc"] = invalidArgument bus msg ["calc"]
 cmdCalc _ msg args = do
   let res = calc $ (T.unpack . T.unwords . tail) args
+  case res of
+    Left err -> do
+      _ <- replyMessage msg ("Error: " ++ err)
+      return ()
+    Right r -> do
+      _ <- replyMessage msg ("Result: " ++ (show r))
+      return ()
+
+cmdEval1 :: Command
+cmdEval1 bus msg ["eval1"] = invalidArgument bus msg ["eval1"]
+cmdEval1 bus msg ("eval1":x:[]) = invalidArgument bus msg ["eval1"]
+cmdEval1 bus msg ("eval1":x:str) = do
+  let res = eval1_ ((T.unpack . T.unwords) str) $ T.unpack x
   case res of
     Left err -> do
       _ <- replyMessage msg ("Error: " ++ err)

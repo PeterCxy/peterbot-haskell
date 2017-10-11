@@ -173,6 +173,20 @@ calc ex = do
       Nothing -> Left $ "Parsing error (maybe mismatched parentheses?)"
       Just result -> Right result
 
+-- Evaluate an expression with exactly one parameter x
+eval1 :: String -> String -> Either String Double
+eval1 ex x = eval1_ ex $ show x
+
+eval1_ :: String -> String -> Either String Double
+eval1_ ex x = do
+    rpn <- r
+    calcRPN $ map f rpn
+  where
+    f token = if token == "x" then x else token
+    r = case infix2RPN ex of
+      Nothing -> Left $ "Parsing error (maybe mismatched parentheses?)"
+      Just result -> Right result
+
 -- Calculate the result of RPN (numbers only)
 calcRPN :: [String] -> Either String Double
 calcRPN rpn = calcRPN' rpn []
