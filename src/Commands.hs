@@ -95,6 +95,7 @@ cmdInfo _ msg ["info"] = do
 \    /print - print the arguments as-is\n\
 \    /rpn - Convert an infix expression to Reverse-Polish Notation (RPN)\n\
 \    /calc - A simple calculator (Please use (0-x) instead of (-x) as the negative sign for now)\n\
+\    /solve - <iteration> <function> Solve f(x) = 0 by Newton's method where f = function\n\
 \" (admin config) (bot_name config)
   _ <- replyMessage msg info
   return ()
