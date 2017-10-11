@@ -19,6 +19,7 @@ getTokenType c
   | c == ' ' = Space
   | elem [c] (operators ++ ["(", ")"]) = BasicOperator -- Only one-char operators (count parentheses as operators)
   | isDigit c = Digit
+  | c == '.' = Digit -- Decimals
   | otherwise = Variable
 
 isOperator :: String -> Maybe String
