@@ -11,10 +11,33 @@ data TokenType = Space | Digit | BasicOperator | Variable deriving (Eq, Enum)
 
 -- Supported operators
 operators :: [String]
-operators = ["=", "+", "-", "*", "/", "^", "!", "sin", "cos"]
+operators = [
+  "=", "+", "-", "*", "/", "^",
+  "!",
+  "sin", "cos", "tan"]
+
+binaryOperators :: [String]
+binaryOperators = ["=", "+", "-", "*", "/", "^"]
+  
+unaryOperators :: [String]
+unaryOperators = ["sin", "cos", "tan", "!"]
 
 brackets :: [String]
 brackets = ["(", ")"]
+
+precedence :: String -> Int
+precedence o = case o of
+  "=" -> 0
+  "+" -> 1
+  "-" -> 1
+  "*" -> 2
+  "/" -> 2
+  "^" -> 3
+  "sin" -> 4
+  "cos" -> 4
+  "tan" -> 4
+  "!" -> 5
+  _ -> -1000
 
 getTokenType :: Char -> TokenType
 getTokenType c
@@ -35,19 +58,6 @@ notOperator operator =
   if (elem operator operators) || (elem operator brackets)
     then Nothing
     else Just operator 
-
-precedence :: String -> Int
-precedence o = case o of
-  "=" -> 0
-  "+" -> 1
-  "-" -> 1
-  "*" -> 2
-  "/" -> 2
-  "^" -> 3
-  "sin" -> 4
-  "cos" -> 4
-  "!" -> 5
-  _ -> -1000
 
 leftAssociative  :: String -> Bool
 leftAssociative o = case o of
@@ -147,12 +157,6 @@ popEverything opt opr = let
       then Nothing
       else popEverything (lastOperator:opt) (tail opr)
 
-binaryOperators :: [String]
-binaryOperators = ["=", "+", "-", "*", "/", "^"]
-
-unaryOperators :: [String]
-unaryOperators = ["sin", "cos", "!"]
-
 isBinaryOperator :: String -> Maybe String
 isBinaryOperator operator =
   if elem operator binaryOperators
@@ -222,6 +226,7 @@ calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
     func = case o of
       "sin" -> Right sin
       "cos" -> Right cos
+      "tan" -> Right tan
       "!" -> Right $ \n -> gamma $ n + 1
       _ -> Left $ "Unsupported operator " ++ o
 calcRPN' (n:rpn) stack = calcRPN' rpn (n:stack)
