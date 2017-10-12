@@ -68,6 +68,13 @@ unaryFunction o = case o of
   "!" -> Right $ \n -> gamma $ n + 1
   _ -> Left $ "Unsupported operator " ++ o
 
+constantValue :: String -> Either String Double
+constantValue c = case c of
+  "e" -> Right $ exp 1
+  "pi" -> Right pi
+  "π" -> Right pi
+  _ -> Left $ "Unsupported identifier " ++ c
+
 getTokenType :: Char -> TokenType
 getTokenType c
   | c == ' ' = Space
@@ -269,15 +276,8 @@ calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
     r' <- calculateUnary f (head stack)
     calcRPN' rpn ((tok r'):(tail stack))
 calcRPN' ((isConstant -> Just c):rpn) stack = do
-    v <- val
+    v <- constantValue c
     calcRPN' rpn ((tok v):stack)
-  where
-    val :: Either String Double
-    val = case c of
-      "e" -> Right $ exp 1
-      "pi" -> Right pi
-      "π" -> Right pi
-      _ -> Left $ "Unsupported identifier " ++ c
 calcRPN' (n:rpn) stack = calcRPN' rpn (n:stack)
 
 calculateBinary :: (Double -> Double -> Double) -> CalcToken -> CalcToken -> Either String Double
