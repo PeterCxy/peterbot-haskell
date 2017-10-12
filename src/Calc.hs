@@ -13,12 +13,6 @@ data TokenType = Space | Digit | BasicOperator | Variable deriving (Eq, Enum)
 constants :: [String]
 constants = ["e", "pi", "π"]
 
-isConstant :: String -> Maybe String
-isConstant str =
-  if elem str constants
-    then Just str
-    else Nothing
-
 -- Supported operators
 operators :: [String]
 operators = [
@@ -175,18 +169,6 @@ popEverything opt opr = let
       then Nothing
       else popEverything (lastOperator:opt) (tail opr)
 
-isBinaryOperator :: String -> Maybe String
-isBinaryOperator operator =
-  if elem operator binaryOperators
-    then Just operator
-    else Nothing
-
-isUnaryOperator :: String -> Maybe String
-isUnaryOperator operator =
-  if elem operator unaryOperators
-    then Just operator
-    else Nothing
-
 calc :: String -> Either String Double
 calc ex = do
     rpn <- r
@@ -210,21 +192,55 @@ eval1_ ex x = do
       Nothing -> Left $ "Parsing error (maybe mismatched parentheses?)"
       Just result -> Right result
 
+-- Type used in calculation
+-- Either an unparsed String, or a Double number
+-- Because a List cannot hold different types of values
+-- We have to unify the unparsed String (or the Strings containing operators) with Double
+-- Otherwise we will have to convert between String and Double back and forth
+-- Not to be confused with the return value, which is either en error or a Double result
+type CalcToken = Either String Double
+
+-- Convert double to CalcToken
+-- Avoid the confusion of different 'Right's
+tok :: Double -> CalcToken
+tok = Right
+
+isBinaryOperator :: CalcToken -> Maybe String
+isBinaryOperator (Right _) = Nothing
+isBinaryOperator (Left operator) =
+  if elem operator binaryOperators
+    then Just operator
+    else Nothing
+
+isUnaryOperator :: CalcToken -> Maybe String
+isUnaryOperator (Right _) = Nothing
+isUnaryOperator (Left operator) =
+  if elem operator unaryOperators
+    then Just operator
+    else Nothing
+
+isConstant :: CalcToken -> Maybe String
+isConstant (Right _) = Nothing
+isConstant (Left str) =
+  if elem str constants
+    then Just str
+    else Nothing
+
 -- Calculate the result of RPN (numbers only)
 calcRPN :: [String] -> Either String Double
-calcRPN rpn = calcRPN' rpn []
+calcRPN rpn = calcRPN' (map Left rpn) []
 
-calcRPN' :: [String] -> [String] -> Either String Double
+calcRPN' :: [CalcToken] -> [CalcToken] -> Either String Double
 -- calcRPN' rpn stack result = Just result
 calcRPN' [] [] = Left "No result arising from the expression"
-calcRPN' [] [r] = readEither' r
+calcRPN' [] [r] = readEither'' r
 calcRPN' [] _ = Left "Evaluation finished but there's item left in the stack"
 calcRPN' ((isBinaryOperator -> Just o):_) [] = Left $ "Operator " ++ o ++ " needs two operands but none is provided."
 calcRPN' ((isBinaryOperator -> Just o):_) (_:[]) = Left $ "Operator " ++ o ++ " needs two operands but only one is provided."
 calcRPN' ((isBinaryOperator -> Just o):rpn) stack = do
     f <- func
     r' <- calculateBinary f ((head . tail) stack) (head stack)
-    calcRPN' rpn ((show r'):((tail . tail) stack))
+    calcRPN' rpn ((tok r'):((tail . tail) stack))
   where
     func :: Either String (Double -> Double -> Double)
     func = case o of
@@ -238,7 +254,7 @@ calcRPN' ((isUnaryOperator -> Just o):_) [] = Left $ "Operator " ++ o ++ " needs
 calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
     f <- func
     r' <- calculateUnary f (head stack)
-    calcRPN' rpn ((show r'):(tail stack))
+    calcRPN' rpn ((tok r'):(tail stack))
   where
     func :: Either String (Double -> Double)
     func = case o of
@@ -252,7 +268,7 @@ calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
       _ -> Left $ "Unsupported operator " ++ o
 calcRPN' ((isConstant -> Just c):rpn) stack = do
     v <- val
-    calcRPN' rpn ((show v):stack)
+    calcRPN' rpn ((tok v):stack)
   where
     val :: Either String Double
     val = case c of
@@ -262,21 +278,26 @@ calcRPN' ((isConstant -> Just c):rpn) stack = do
       _ -> Left $ "Unsupported identifier " ++ c
 calcRPN' (n:rpn) stack = calcRPN' rpn (n:stack)
 
-calculateBinary :: (Double -> Double -> Double) -> String -> String -> Either String Double
+calculateBinary :: (Double -> Double -> Double) -> CalcToken -> CalcToken -> Either String Double
 calculateBinary op n1 n2 = do
-  num1 <- readEither' n1
-  num2 <- readEither' n2
+  num1 <- readEither'' n1
+  num2 <- readEither'' n2
   return $ op num1 num2
 
-calculateUnary :: (Double -> Double) -> String -> Either String Double
+calculateUnary :: (Double -> Double) -> CalcToken -> Either String Double
 calculateUnary op n = do
-  num <- readEither' n
+  num <- readEither'' n
   return $ op num
 
 readEither' :: String -> Either String Double
 readEither' str = case readEither str of
   Left _ -> Left $ "Illegal operand " ++ str
   Right res -> Right res
+
+readEither'' :: CalcToken -> Either String Double
+readEither'' t = case t of
+  Left str -> readEither' str
+  Right d -> Right d
 
 instance Num b => Num (Either a b) where
   negate = fmap negate
