@@ -14,13 +14,13 @@ operators :: [String]
 operators = [
   "=", "+", "-", "*", "/", "^",
   "!",
-  "sin", "cos", "tan"]
+  "sin", "cos", "tan", "sinh", "cosh", "tanh"]
 
 binaryOperators :: [String]
 binaryOperators = ["=", "+", "-", "*", "/", "^"]
   
 unaryOperators :: [String]
-unaryOperators = ["sin", "cos", "tan", "!"]
+unaryOperators = ["sin", "cos", "tan", "sinh", "cosh", "tanh", "!"]
 
 brackets :: [String]
 brackets = ["(", ")"]
@@ -36,6 +36,9 @@ precedence o = case o of
   "sin" -> 4
   "cos" -> 4
   "tan" -> 4
+  "sinh" -> 4
+  "cosh" -> 4
+  "tanh" -> 4
   "!" -> 5
   _ -> -1000
 
@@ -111,10 +114,15 @@ infix2RPN' (' ':e) (notOperator -> Just cur) opt opr = infix2RPN' e "" (cur:opt)
 -- An operator!
 -- Pop everything that has a greater precedence than itself
 -- then push itself to the operator stack
-infix2RPN' (c:e) (isOperator -> Just cur) opt opr = let
-    newParams = popGreaterOperators cur opt opr
-  in
-    infix2RPN' e [c] (fst newParams) (cur:(snd newParams)) -- Push the current operator into the operator stack
+infix2RPN' (c:e) (isOperator -> Just cur) opt opr =
+  -- Make sure it doesn't form an operator with cur ++ [c]
+  -- Because operators like sin and sinh share the same prefix
+  case isOperator (cur ++ [c]) of
+    Just newCur -> infix2RPN' e newCur opt opr
+    Nothing -> let
+        newParams = popGreaterOperators cur opt opr
+      in
+        infix2RPN' e [c] (fst newParams) (cur:(snd newParams)) -- Push the current operator into the operator stack
 -- Left bracket. Just push it.
 infix2RPN' (c:e) "(" opt opr = infix2RPN' e [c] opt ("(":opr) -- Push the left bracket into the operator stack
 -- Right bracket! Pop until left. If no left is found, then return Nothing
@@ -227,6 +235,9 @@ calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
       "sin" -> Right sin
       "cos" -> Right cos
       "tan" -> Right tan
+      "sinh" -> Right sinh
+      "cosh" -> Right cosh
+      "tanh" -> Right tanh
       "!" -> Right $ \n -> gamma $ n + 1
       _ -> Left $ "Unsupported operator " ++ o
 calcRPN' (n:rpn) stack = calcRPN' rpn (n:stack)
