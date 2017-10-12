@@ -9,6 +9,16 @@ import Text.Read (readEither)
 
 data TokenType = Space | Digit | BasicOperator | Variable deriving (Eq, Enum)
 
+-- Mathematical constants
+constants :: [String]
+constants = ["e", "pi", "π"]
+
+isConstant :: String -> Maybe String
+isConstant str =
+  if elem str constants
+    then Just str
+    else Nothing
+
 -- Supported operators
 operators :: [String]
 operators = [
@@ -240,6 +250,16 @@ calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
       "tanh" -> Right tanh
       "!" -> Right $ \n -> gamma $ n + 1
       _ -> Left $ "Unsupported operator " ++ o
+calcRPN' ((isConstant -> Just c):rpn) stack = do
+    v <- val
+    calcRPN' rpn ((show v):stack)
+  where
+    val :: Either String Double
+    val = case c of
+      "e" -> Right $ exp 1
+      "pi" -> Right pi
+      "π" -> Right pi
+      _ -> Left $ "Unsupported identifier " ++ c
 calcRPN' (n:rpn) stack = calcRPN' rpn (n:stack)
 
 calculateBinary :: (Double -> Double -> Double) -> String -> String -> Either String Double
