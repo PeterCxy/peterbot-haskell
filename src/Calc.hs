@@ -47,6 +47,27 @@ precedence o = case o of
   "!" -> 5
   _ -> -1000
 
+binaryFunction :: String -> Either String (Double -> Double -> Double)
+binaryFunction o = case o of
+  "+" -> Right (+)
+  "-" -> Right (-)
+  "*" -> Right (*)
+  "/" -> Right (/)
+  "^" -> Right (**)
+  _ -> Left $ "Unsupported operator " ++ o
+  
+unaryFunction :: String -> Either String (Double -> Double)
+unaryFunction o = case o of
+  "sin" -> Right sin
+  "cos" -> Right cos
+  "tan" -> Right tan
+  "sinh" -> Right sinh
+  "cosh" -> Right cosh
+  "tanh" -> Right tanh
+  "log" -> Right log
+  "!" -> Right $ \n -> gamma $ n + 1
+  _ -> Left $ "Unsupported operator " ++ o
+
 getTokenType :: Char -> TokenType
 getTokenType c
   | c == ' ' = Space
@@ -239,35 +260,14 @@ calcRPN' [] _ = Left "Evaluation finished but there's item left in the stack"
 calcRPN' ((isBinaryOperator -> Just o):_) [] = Left $ "Operator " ++ o ++ " needs two operands but none is provided."
 calcRPN' ((isBinaryOperator -> Just o):_) (_:[]) = Left $ "Operator " ++ o ++ " needs two operands but only one is provided."
 calcRPN' ((isBinaryOperator -> Just o):rpn) stack = do
-    f <- func
+    f <- binaryFunction o
     r' <- calculateBinary f ((head . tail) stack) (head stack)
     calcRPN' rpn ((tok r'):((tail . tail) stack))
-  where
-    func :: Either String (Double -> Double -> Double)
-    func = case o of
-      "+" -> Right (+)
-      "-" -> Right (-)
-      "*" -> Right (*)
-      "/" -> Right (/)
-      "^" -> Right (**)
-      _ -> Left $ "Unsupported operator " ++ o
 calcRPN' ((isUnaryOperator -> Just o):_) [] = Left $ "Operator " ++ o ++ " needs one operand but none is provided."
 calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
-    f <- func
+    f <- unaryFunction o
     r' <- calculateUnary f (head stack)
     calcRPN' rpn ((tok r'):(tail stack))
-  where
-    func :: Either String (Double -> Double)
-    func = case o of
-      "sin" -> Right sin
-      "cos" -> Right cos
-      "tan" -> Right tan
-      "sinh" -> Right sinh
-      "cosh" -> Right cosh
-      "tanh" -> Right tanh
-      "log" -> Right log
-      "!" -> Right $ \n -> gamma $ n + 1
-      _ -> Left $ "Unsupported operator " ++ o
 calcRPN' ((isConstant -> Just c):rpn) stack = do
     v <- val
     calcRPN' rpn ((tok v):stack)
