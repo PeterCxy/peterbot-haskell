@@ -6,6 +6,7 @@ import Control.Applicative (liftA2)
 import Data.Char (isSpace, isDigit)
 import Math.Gamma
 import Text.Read (readEither)
+import Utils (ifM)
 
 data TokenType = Space | Digit | BasicOperator | Variable deriving (Eq, Enum)
 
@@ -84,16 +85,10 @@ getTokenType c
   | otherwise = Variable
 
 isOperator :: String -> Maybe String
-isOperator operator =
-  if elem operator operators
-    then Just operator
-    else Nothing
+isOperator operator = ifM operator $ operator `elem` operators
 
 notOperator :: String -> Maybe String
-notOperator operator =
-  if (elem operator operators) || (elem operator brackets)
-    then Nothing
-    else Just operator 
+notOperator operator = ifM operator $ not ((operator `elem` operators) || (operator `elem` brackets))
 
 leftAssociative  :: String -> Bool
 leftAssociative o = case o of
@@ -236,17 +231,11 @@ tok = Right
 
 isBinaryOperator :: CalcToken -> Maybe String
 isBinaryOperator (Right _) = Nothing
-isBinaryOperator (Left operator) =
-  if elem operator binaryOperators
-    then Just operator
-    else Nothing
+isBinaryOperator (Left operator) = ifM operator (operator `elem` binaryOperators)
 
 isUnaryOperator :: CalcToken -> Maybe String
 isUnaryOperator (Right _) = Nothing
-isUnaryOperator (Left operator) =
-  if elem operator unaryOperators
-    then Just operator
-    else Nothing
+isUnaryOperator (Left operator) = ifM operator (operator `elem` unaryOperators)
 
 isConstant :: CalcToken -> Maybe String
 isConstant (Right _) = Nothing
