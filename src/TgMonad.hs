@@ -111,3 +111,15 @@ isAdmin' u = do
   user <- liftMaybe $ (u >>= user_name)
   config <- lift $ getConfig
   return $ user == T.unpack (admin config)
+
+isBlacklisted :: Maybe TgUser -> TgBotI Bool
+isBlacklisted u = do
+  res <- liftIdentity $ runMaybeT $ isBlacklisted' u
+  return $ defVal res False
+
+isBlacklisted' :: Maybe TgUser -> MaybeT (TgBot Identity) Bool
+isBlacklisted' u = do
+  uid <- liftMaybe $ (fmap user_id u)
+  config <- lift $ getConfig
+  bl <- liftMaybe $ blacklist config
+  return $ uid `Prelude.elem` bl

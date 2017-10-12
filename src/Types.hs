@@ -8,7 +8,8 @@ import qualified Data.Text as T
 data Config = Config {
   token :: T.Text,
   admin :: T.Text,
-  bot_name :: T.Text
+  bot_name :: T.Text,
+  blacklist :: Maybe [Int]
 }
 
 instance FromJSON Config where
@@ -16,6 +17,7 @@ instance FromJSON Config where
     <$> c .: "token"
     <*> c .: "admin"
     <*> c .: "bot_name"
+    <*> c .:? "blacklist"
 
 class TgResult t where
   tid :: t -> Int

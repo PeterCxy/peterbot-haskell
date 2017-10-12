@@ -50,10 +50,11 @@ registerCommands bus = do
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
     subscriber pair bus ev = do
-      msg <- liftMaybe $ message ev -- Lift Maybe into MaybeT
-      txt <- liftMaybe $ (text msg >>= couldBeCommand)
       config <- lift getConfig
-      args <- liftMaybe $ isCommand (fst pair) (bot_name config) $ parseArgs txt -- TODO: Don't even parse for non-command messages
+      msg <- liftMaybe $ message ev -- Lift Maybe into MaybeT
+      blacklisted <- lift $ liftIdentity $ isBlacklisted $ from_user msg
+      txt <- liftMaybe $ (text msg >>= couldBeCommand >>= \m -> ifM m $ not blacklisted) -- Continue if the user is not blacklisted and it may be a command
+      args <- liftMaybe $ isCommand (fst pair) (bot_name config) $ parseArgs txt
       _ <- liftIO $ async $ runTgBot (snd pair bus msg $ args) config -- Spawn a new thread by default and pass the telegram arguments
       return ()
 
