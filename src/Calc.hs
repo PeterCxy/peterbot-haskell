@@ -18,13 +18,13 @@ operators :: [String]
 operators = [
   "=", "+", "-", "*", "/", "^",
   "!",
-  "sin", "cos", "tan", "sinh", "cosh", "tanh"]
+  "sin", "cos", "tan", "sinh", "cosh", "tanh", "log"]
 
 binaryOperators :: [String]
 binaryOperators = ["=", "+", "-", "*", "/", "^"]
   
 unaryOperators :: [String]
-unaryOperators = ["sin", "cos", "tan", "sinh", "cosh", "tanh", "!"]
+unaryOperators = ["sin", "cos", "tan", "sinh", "cosh", "tanh", "log", "!"]
 
 brackets :: [String]
 brackets = ["(", ")"]
@@ -43,6 +43,7 @@ precedence o = case o of
   "sinh" -> 4
   "cosh" -> 4
   "tanh" -> 4
+  "log" -> 4
   "!" -> 5
   _ -> -1000
 
@@ -264,6 +265,7 @@ calcRPN' ((isUnaryOperator -> Just o):rpn) stack = do
       "sinh" -> Right sinh
       "cosh" -> Right cosh
       "tanh" -> Right tanh
+      "log" -> Right log
       "!" -> Right $ \n -> gamma $ n + 1
       _ -> Left $ "Unsupported operator " ++ o
 calcRPN' ((isConstant -> Just c):rpn) stack = do
