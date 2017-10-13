@@ -19,13 +19,13 @@ operators :: [String]
 operators = [
   "=", "+", "-", "*", "/", "^",
   "!",
-  "sin", "cos", "tan", "sinh", "cosh", "tanh", "log"]
+  "sin", "cos", "tan", "sinh", "cosh", "tanh", "log", "ln"]
 
 binaryOperators :: [String]
 binaryOperators = ["=", "+", "-", "*", "/", "^"]
   
 unaryOperators :: [String]
-unaryOperators = ["sin", "cos", "tan", "sinh", "cosh", "tanh", "log", "!"]
+unaryOperators = ["sin", "cos", "tan", "sinh", "cosh", "tanh", "log", "ln", "!"]
 
 brackets :: [String]
 brackets = ["(", ")"]
@@ -45,6 +45,7 @@ precedence o = case o of
   "cosh" -> 4
   "tanh" -> 4
   "log" -> 4
+  "ln" -> 4
   "!" -> 5
   _ -> -1000
 
@@ -65,7 +66,8 @@ unaryFunction o = case o of
   "sinh" -> Right sinh
   "cosh" -> Right cosh
   "tanh" -> Right tanh
-  "log" -> Right log
+  "log" -> Right $ \x -> (log x) / (log 10)
+  "ln" -> Right log
   "!" -> Right $ \n -> gamma $ n + 1
   _ -> Left $ "Unsupported operator " ++ o
 
