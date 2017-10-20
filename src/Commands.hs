@@ -8,7 +8,6 @@ import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
 import qualified Data.Text as T
 import Data.UUID
-import Data.List as L (intercalate)
 import Text.Printf
 import Text.Read (readMaybe)
 import Types
