@@ -20,10 +20,10 @@ import Calc
 type Command = EventBus TgUpdate -> TgMessage -> [T.Text] -> TgBot IO ()
 
 couldBeCommand :: T.Text -> Maybe T.Text
-couldBeCommand str = ifM str $ (T.head str) == '/'
+couldBeCommand str = ifM str $ T.head str == '/'
 
 isCommand :: String -> T.Text -> [T.Text] -> Maybe [T.Text]
-isCommand cmd botName args = ifM ((T.pack cmd) : tail args) $ (length args /= 0)
+isCommand cmd botName args = ifM (T.pack cmd : tail args) $ (length args /= 0)
   && (head args == T.concat ["/", T.pack cmd] || head args == T.concat ["/", T.pack cmd, "@", botName])
 
 -- Register commands
@@ -53,9 +53,10 @@ registerCommands bus = do
       config <- lift getConfig
       msg <- liftMaybe $ message ev -- Lift Maybe into MaybeT
       blacklisted <- lift $ liftIdentity $ isBlacklisted $ from_user msg
-      txt <- liftMaybe $ (text msg >>= couldBeCommand >>= \m -> ifM m $ not blacklisted) -- Continue if the user is not blacklisted and it may be a command
+      txt <- liftMaybe
+        (text msg >>= couldBeCommand >>= \ m -> ifM m $ not blacklisted) -- Continue if the user is not blacklisted and it may be a command
       args <- liftMaybe $ isCommand (fst pair) (bot_name config) $ parseArgs txt
-      _ <- liftIO $ async $ runTgBot (snd pair bus msg $ args) config -- Spawn a new thread by default and pass the telegram arguments
+      _ <- liftIO $ async $ runTgBot (snd pair bus msg args) config -- Spawn a new thread by default and pass the telegram arguments
       return ()
 
     reg :: (String, Command) -> TgBot IO ()
@@ -65,7 +66,7 @@ registerCommands bus = do
         -- Defer the work to another function wrapped with MaybeT
         -- Otherwise we will have to use bunches of case-of
         m <- runTgBot (runMaybeT $ subscriber pair b ev) config -- IO (Maybe ())
-        return $ defVal m $ () -- Force unwrap the inner Maybe monad
+        return $ defVal m () -- Force unwrap the inner Maybe monad
       return ()
 
 invalidArgument :: Command
@@ -97,7 +98,7 @@ cmdInfo _ msg ["info"] = do
 \    /rpn - Convert an infix expression to Reverse-Polish Notation (RPN)\n\
 \    /calc - A simple calculator\n\
 \    /solve - <initial_value> <function> Solve f(x) = 0 by Newton's method where f = function\n\
-\" (admin config) (bot_name config)
+\ " (admin config) (bot_name config)
   _ <- replyMessage msg info
   return ()
 cmdInfo bus msg list = invalidArgument bus msg list
@@ -133,7 +134,7 @@ cmdRPN _ msg args = do
       _ <- replyMessage msg "Error parsing infix expression (maybe mismatched parentheses?)"
       return ()
     Just r -> do
-      _ <- replyMessage msg $ L.intercalate " " r
+      _ <- replyMessage msg $ unwords r
       return ()
 
 cmdCalc :: Command
@@ -143,15 +144,17 @@ cmdCalc _ msg args =
 
 cmdEval1 :: Command
 cmdEval1 bus msg ["eval1"] = invalidArgument bus msg ["eval1"]
-cmdEval1 bus msg ("eval1":x:[]) = invalidArgument bus msg ["eval1"]
+cmdEval1 bus msg ["eval1", _] = invalidArgument bus msg ["eval1"]
 cmdEval1 _ msg ("eval1":x:str) =
   processCalcResult msg $ eval1_ ((T.unpack . T.unwords) str) $ T.unpack x
+cmdEval1 _ _ _ = return ()
 
 cmdSolve :: Command
 cmdSolve bus msg ["solve"] = invalidArgument bus msg ["solve"]
-cmdSolve bus msg ("solve":x:[]) = invalidArgument bus msg ["solve"]
+cmdSolve bus msg ["solve", _] = invalidArgument bus msg ["solve"]
 cmdSolve _ msg ("solve":x:str) =
   processCalcResult msg $ solveNewton_ (eval1 ((T.unpack . T.unwords) str)) 30 $ T.unpack x
+cmdSolve _ _ _ = return ()
 
 -- Helper function to process the result of calculations
 processCalcResult :: TgMessage -> Either String Double -> TgBot IO ()
@@ -160,7 +163,7 @@ processCalcResult msg res = case res of
     _ <- replyMessage msg ("Error: " ++ err)
     return ()
   Right r -> do
-    _ <- replyMessage msg ("Result: " ++ (show r))
+    _ <- replyMessage msg ("Result: " ++ show r)
     return ()
 
 -- Secret: send to chat

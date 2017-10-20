@@ -30,7 +30,7 @@ main = do
     (async $ runTgBot (fetchUpdates bus $ -1) config) >>= wait
   where
     confFile = "config.json"
-    openFail :: IOError -> IO (String)
+    openFail :: IOError -> IO String
     openFail ex = do
       putStrLn $ "Failed to open file " ++ confFile
       print ex
@@ -42,22 +42,22 @@ fetchUpdates bus index = do
     -- Default to [] for failed cases
     -- ifM: return Nothing if the response is not Okay
     let upd = defVal (result res >>= \r -> ifM r $ ok res) []
-    liftIO $ mapM (publish bus) upd
+    _ <- liftIO $ mapM (publish bus) upd
     if length upd == 0
       then next index -- No result received, retry
       else next $ update_id $ last upd
   where
     next :: Int -> TgBot IO ()
-    next newIndex = fetchUpdates bus newIndex
+    next = fetchUpdates bus
     fetchFail :: SomeException -> TgBot IO (TgResponse [TgUpdate])
-    fetchFail ex = do
+    fetchFail _ = do
       liftIO $ putStrLn "No message received before timeout or there were network issues. Continuing."
       -- Return a pseudo value
       return $ TgResponse False Nothing
 
 registerSubscribers :: EventBus TgUpdate -> TgBot IO ()
 registerSubscribers bus = do
-  liftIO $ subscribe bus $ \_ _ ev -> do
+  _ <- liftIO $ subscribe bus $ \_ _ ev -> do
     putStrLn "Received Message"
     print $ update_id ev
     --subscribe bus $ \_ _ _ -> print "My new subscriber!"

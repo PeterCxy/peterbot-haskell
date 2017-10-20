@@ -35,7 +35,7 @@ data Handler t = Handler {
 }
 -- Definition of a subscriber function.
 -- Will be curried to pass the UUID to the subscriber for unsubscribing
-type Handler' t = (UUID) -> EventBus t -> t -> IO ()
+type Handler' t = UUID -> EventBus t -> t -> IO ()
 
 -- The EventBus model
 -- This model is one-time: Everytime the subscriber list changes, a new EventBus is created, inheriting the `chan` and `nextBus`
@@ -54,11 +54,11 @@ addHandler handler bus@EventBus{..} = bus {
 removeHandler :: UUID -> EventBus t -> EventBus t
 removeHandler uid bus@EventBus{..} = bus {
   handlers = V.filter f handlers
-} where f handler = (uuid handler) /= uid
+} where f handler = uuid handler /= uid
 
 setNextBus :: TVar (EventBus t) -> EventBus t -> EventBus t
 setNextBus tvar bus@EventBus{..} = bus {
-  nextBus = Just (tvar)
+  nextBus = Just tvar
 }
 
 -- Initializes an EventBus
@@ -73,13 +73,13 @@ createBus = do
   -- Change the nextBus property to the created TVar, which returns a new modified bus
   let bus2 = setNextBus tvar bus1
   -- Point the TVar to the modified EventBus
-  atomically $ modifyTVar tvar (\_ -> bus2)
+  atomically $ modifyTVar tvar (const bus2)
   return bus2
 
 -- Start the EventBus in a Haskell thread
 runBus :: EventBus t -> IO (EventBus t)
 runBus bus = do
-  async $ runBus' bus
+  _ <- async $ runBus' bus -- Don't wait for the async thread
   return bus
 
 -- Actual code running inside the thread
@@ -92,12 +92,11 @@ runBus' bus = do
     myBus <- getNextBus bus
     --print $ V.length $ handlers myBus
     -- Call every subscriber for this event
-    V.mapM (handle myBus ev) (handlers myBus)
+    _ <- V.mapM (handle myBus ev) (handlers myBus)
     -- Recursively call itself. This is an infinite event loop.
     runBus' myBus
   where
-    handle myBus ev handler = do
-      func handler myBus ev
+    handle myBus ev handler = func handler myBus ev
 
 getNextBusTVar :: EventBus t -> IO (TVar (EventBus t))
 getNextBusTVar bus = return $ assertM' $ nextBus bus
@@ -107,7 +106,7 @@ getNextBus bus = readTVarIO . assertM' $ nextBus bus
 
 -- Add a subscriber to EventBus
 -- See the definition of Handler` for how to build a subscriber
-subscribe :: EventBus t -> Handler' t -> IO (UUID)
+subscribe :: EventBus t -> Handler' t -> IO UUID
 subscribe bus handler = do
   uuid <- nextRandom
   -- Currying. Create a Handler from Handler', with UUID partially applied as the first parameter
@@ -128,13 +127,12 @@ unsubscribe bus uid = do
 
 -- Send an event to EventBus
 publish :: EventBus t -> t -> IO ()
-publish bus ev = do
-  atomically $ writeTChan (chan bus) ev
+publish bus ev = atomically $ writeTChan (chan bus) ev
 
 -- Shorthands
 subscribeOnce :: EventBus t -> Handler' t -> IO ()
 subscribeOnce bus handler = do
-  subscribe bus $ \uid b ev -> do
+  _ <- subscribe bus $ \uid b ev -> do
     handler uid b ev
     unsubscribe b uid
   return ()

@@ -28,7 +28,7 @@ import Network.HTTP.Simple
 import Types
 import Utils
 
-data TgBot m a = TgBot { runTgBot :: Config -> m a }
+newtype TgBot m a = TgBot { runTgBot :: Config -> m a }
 type TgBotI a = TgBot Identity a
 
 instance (Monad m) => Functor (TgBot m) where
@@ -53,9 +53,7 @@ instance (MonadIO m) => MonadIO (TgBot m) where
   liftIO action = TgBot $ \_ -> liftIO action
 
 instance MonadTrans TgBot where
-  lift m = TgBot $ \_ -> do
-    a <- m
-    return a
+  lift m = TgBot $ \_ -> m
 
 getConfig :: (Monad m) => TgBot m Config
 getConfig = TgBot $ \c -> return c
@@ -95,7 +93,7 @@ apiPost api opt = do
 
 getUpdates :: Int -> TgBot IO (TgResponse [TgUpdate])
 getUpdates offset = do
-    url <- liftIdentity $ apiGet "getUpdates" [("offset", Just (offset)), ("timeout", Just (timeout))]
+    url <- liftIdentity $ apiGet "getUpdates" [("offset", Just offset), ("timeout", Just timeout)]
     fmap getResponseBody $ httpJSON url
   where
     timeout = 30
@@ -131,7 +129,7 @@ isBlacklisted u = do
 
 isBlacklisted' :: Maybe TgUser -> MaybeT (TgBot Identity) Bool
 isBlacklisted' u = do
-  uid <- liftMaybe $ (fmap user_id u)
-  config <- lift $ getConfig
+  uid <- liftMaybe (fmap user_id u)
+  config <- lift getConfig
   bl <- liftMaybe $ blacklist config
   return $ uid `Prelude.elem` bl
