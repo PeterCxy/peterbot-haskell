@@ -10,7 +10,7 @@ module Utils
   , parseArgs
   , toQS
   , toBody
-  )where
+  ) where
 
 import Control.Monad
 import Control.Monad.Identity

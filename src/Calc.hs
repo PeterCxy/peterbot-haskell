@@ -1,6 +1,13 @@
 {-# LANGUAGE ViewPatterns #-}
 
-module Calc where
+module Calc
+  ( calc
+  , infix2RPN
+  , eval1
+  , eval1_
+  , solveNewton
+  , solveNewton_
+  ) where
 
 import Control.Applicative (liftA2)
 import Data.Char (isSpace, isDigit)
