@@ -1,6 +1,14 @@
 {-# LANGUAGE OverloadedStrings, ExistentialQuantification #-}
 
-module Types where
+module Types 
+  ( Config (..)
+  , TgResult (..)
+  , TgResponse (..)
+  , TgUpdate (..)
+  , TgMessage (..)
+  , TgUser (..)
+  , TgChat (..)
+  ) where
 
 import Data.Aeson
 import qualified Data.Text as T

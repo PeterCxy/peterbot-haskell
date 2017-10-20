@@ -1,6 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module TgMonad where
+module TgMonad
+  ( TgBot (..)
+  , getConfig
+  , liftIdentity
+  , catch'
+  , getUpdates
+  , sendMessage
+  , replyMessage
+  , isAdmin
+  , isAdmin'
+  , isBlacklisted
+  , isBlacklisted'
+  ) where
 
 import Control.Exception
 import Control.Monad

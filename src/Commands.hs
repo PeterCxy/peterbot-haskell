@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Commands where
+module Commands (registerCommands) where
 
 import Control.Concurrent.Async
 import Control.Monad.IO.Class

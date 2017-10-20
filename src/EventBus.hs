@@ -1,6 +1,14 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module EventBus where
+module EventBus
+  ( EventBus (..)
+  , createBus
+  , runBus
+  , subscribe
+  , subscribeOnce
+  , unsubscribe
+  , publish
+  ) where
 
 import Control.Concurrent.Async
 import Control.Concurrent.STM
