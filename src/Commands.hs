@@ -128,14 +128,22 @@ cmdPrint _ msg args = do
   return ()
 
 cmdPush :: Command
-cmdPush _ msg ["push", newItem]
-    | (chatType == "group") || (chatType == "supergroup") =
-      doCmdPush (chat_id $ chat msg) (chat_title $ chat msg) newItem
-    | otherwise = return ()
-  where
-    chatType = chat_type $ chat msg
+cmdPush _ msg ["push", newItem] =
+  cmdChangeTitle msg $ doCmdPush (chat_id $ chat msg) (chat_title $ chat msg) newItem
 cmdPush bus msg _ = invalidArgument bus msg ["push"]
 
+-- Shared logic for title-changing actions
+-- Do such actions only in groups
+cmdChangeTitle :: TgMessage -> TgBot IO () -> TgBot IO ()
+cmdChangeTitle msg ioAction
+    | (chatType == "group") || (chatType == "supergroup") = ioAction
+    | otherwise = do
+      _ <- replyMessage msg "Can only do this within groups."
+      return ()
+  where
+    chatType = chat_type $ chat msg
+
+-- Implementation of title-changing actions
 doCmdPush :: Int -> Maybe T.Text -> T.Text -> TgBot IO ()
 doCmdPush _ Nothing _ = return ()
 doCmdPush chatId (Just title) newItem = do
