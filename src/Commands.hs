@@ -177,7 +177,7 @@ doChangeTitle chatId newTitle = do
       Just b -> unless b failToChange
   where
     failToChange = do
-      _ <- sendMessage chatId ("Cannot change title to: \"" ++ T.unpack newTitle ++ "\"")
+      _ <- sendMessage chatId ("Could not change title to: \"" ++ T.unpack newTitle ++ "\"")
       return ()
 
 -- Push newItem to title. Drop the last one if longer than 255 chars.
