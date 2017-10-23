@@ -46,6 +46,7 @@ registerCommands bus = do
       ("eval1", cmdEval1),
       ("solve", cmdSolve),
       ("push", cmdPush),
+      ("drop", cmdDrop),
       ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
@@ -132,6 +133,11 @@ cmdPush _ msg ["push", newItem] =
   cmdChangeTitle msg $ doCmdPush (chat_id $ chat msg) (chat_title $ chat msg) newItem
 cmdPush bus msg _ = invalidArgument bus msg ["push"]
 
+cmdDrop :: Command
+cmdDrop _ msg ["drop"] =
+  cmdChangeTitle msg $ doCmdDrop (chat_id $ chat msg) (chat_title $ chat msg)
+cmdDrop bus msg _ = invalidArgument bus msg ["drop"]
+
 -- Shared logic for title-changing actions
 -- Do such actions only in groups
 cmdChangeTitle :: TgMessage -> TgBot IO () -> TgBot IO ()
@@ -148,6 +154,12 @@ doCmdPush :: Int -> Maybe T.Text -> T.Text -> TgBot IO ()
 doCmdPush _ Nothing _ = return ()
 doCmdPush chatId (Just title) newItem = do
   _ <- setChatTitle chatId $ T.unpack $ pushTitle title newItem
+  return ()
+
+doCmdDrop :: Int -> Maybe T.Text -> TgBot IO ()
+doCmdDrop _ Nothing = return ()
+doCmdDrop chatId (Just title) = do
+  _ <- setChatTitle chatId $ T.unpack $ dropTitle title
   return ()
 
 -- Push newItem to title. Drop the last one if longer than 255 chars.
