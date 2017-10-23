@@ -83,24 +83,26 @@ cmdHello bus msg list = invalidArgument bus msg list
 
 cmdInfo :: Command
 cmdInfo _ msg ["info"] = do
-  config <- getConfig
-  let info = printf "\
-\Hello, this is the bot of @%s, written in Haskell.\n\
-\Source code available at https://github.com/PeterCxy/peterbot-haskell\n\
-\To invoke a command: /cmd_name[@%s] arg1 arg2 \"some argument with spaces\" ....\n\
-\[] means that the part inside it is optional\n\
-\Available commands:\n\
-\    /hello - say Hello\n\
-\    /info - print this information\n\
-\    /my_id - get your Telegram ID (internal ID)\n\
-\    /chat_id - get the internal ID of the current chat / group / channel\n\
-\    /print - print the arguments as-is\n\
-\    /rpn - Convert an infix expression to Reverse-Polish Notation (RPN)\n\
-\    /calc - A simple calculator\n\
-\    /solve - <initial_value> <function> Solve f(x) = 0 by Newton's method where f = function\n\
-\ " (admin config) (bot_name config)
-  _ <- replyMessage msg info
-  return ()
+    config <- getConfig
+    let info = printf infoLines (admin config) (bot_name config)
+    _ <- replyMessage msg info
+    return ()
+  where
+    infoLines = unlines [
+      "Hello, this is the bot of @%s, written in Haskell.",
+      "Source code available at https://github.com/PeterCxy/peterbot-haskell",
+      "To invoke a command: /cmd_name[@%s] arg1 arg2 \"some argument with spaces\" ....",
+      "[] means that the part inside it is optional",
+      "Available commands:",
+      "    /hello - say Hello",
+      "    /info - print this information",
+      "    /my_id - get your Telegram ID (internal ID)",
+      "    /chat_id - get the internal ID of the current chat / group / channel",
+      "    /print - print the arguments as-is",
+      "    /rpn - Convert an infix expression to Reverse-Polish Notation (RPN)",
+      "    /calc - A simple calculator",
+      "    /solve - <initial_value> <function> Solve f(x) = 0 by Newton's method where f = function"
+      ]
 cmdInfo bus msg list = invalidArgument bus msg list
 
 cmdMyId :: Command
