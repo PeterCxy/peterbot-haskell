@@ -182,7 +182,7 @@ cmdChangeTitle msg ioAction
 -- Implementation of title-changing actions
 doCmdPush :: Int -> Maybe T.Text -> T.Text -> TgBot IO ()
 doCmdPush _ Nothing _ = return ()
-doCmdPush chatId (Just title) newItem = doChangeTitle chatId $ pushTitle title newItem
+doCmdPush chatId (Just title) newItem = doChangeTitle chatId $ pushTitle title $ T.strip (T.replace "|" " " newItem)
 
 doCmdDrop :: Int -> Maybe T.Text -> TgBot IO ()
 doCmdDrop _ Nothing = return ()
@@ -231,7 +231,7 @@ splitTitle :: T.Text -> [T.Text]
 splitTitle = map T.strip . T.splitOn "||"
 
 joinTitle :: [T.Text] -> T.Text
-joinTitle = T.intercalate " || "
+joinTitle = T.intercalate " || " . filter (/= "")
 
 -- Calculator functions
 cmdRPN :: Command
