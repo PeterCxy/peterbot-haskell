@@ -3,6 +3,7 @@
 module Commands (registerCommands) where
 
 import Control.Concurrent.Async
+import Control.Monad (unless)
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Maybe
@@ -152,15 +153,22 @@ cmdChangeTitle msg ioAction
 -- Implementation of title-changing actions
 doCmdPush :: Int -> Maybe T.Text -> T.Text -> TgBot IO ()
 doCmdPush _ Nothing _ = return ()
-doCmdPush chatId (Just title) newItem = do
-  _ <- setChatTitle chatId $ T.unpack $ pushTitle title newItem
-  return ()
+doCmdPush chatId (Just title) newItem = doChangeTitle chatId $ pushTitle title newItem
 
 doCmdDrop :: Int -> Maybe T.Text -> TgBot IO ()
 doCmdDrop _ Nothing = return ()
-doCmdDrop chatId (Just title) = do
-  _ <- setChatTitle chatId $ T.unpack $ dropTitle title
-  return ()
+doCmdDrop chatId (Just title) = doChangeTitle chatId $ dropTitle title
+
+doChangeTitle :: Int -> T.Text -> TgBot IO ()
+doChangeTitle chatId newTitle = do
+    res <- setChatTitle chatId $ T.unpack newTitle
+    case result res of
+      Nothing -> failToChange
+      Just b -> unless b failToChange
+  where
+    failToChange = do
+      _ <- sendMessage chatId ("Cannot change title to: \"" ++ T.unpack newTitle ++ "\"")
+      return ()
 
 -- Push newItem to title. Drop the last one if longer than 255 chars.
 pushTitle :: T.Text -> T.Text -> T.Text
