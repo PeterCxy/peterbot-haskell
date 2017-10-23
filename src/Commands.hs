@@ -50,7 +50,7 @@ registerCommands bus = do
       ("push", cmdPush),
       ("drop", cmdDrop),
       ("pop", cmdPop),
-      ("dropAll", cmdDropAll),
+      ("drop_all", cmdDropAll),
       ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
@@ -109,7 +109,7 @@ cmdInfo _ msg ["info"] = do
       "    /push - <item> push an entry to the current group title",
       "    /pop - pop an entry from the current group title",
       "    /drop - drop the last entry of the current group title",
-      "    /dropAll - keep only the first entry of the current group title",
+      "    /drop_all - keep only the first entry of the current group title",
       "    /rpn - Convert an infix expression to Reverse-Polish Notation (RPN)",
       "    /calc - A simple calculator",
       "    /solve - <initial_value> <function> Solve f(x) = 0 by Newton's method where f = function"
@@ -164,9 +164,9 @@ cmdPop _ msg ["pop"] =
 cmdPop bus msg _ = invalidArgument bus msg ["pop"]
 
 cmdDropAll :: Command
-cmdDropAll _ msg ["dropAll"] =
+cmdDropAll _ msg ["drop_all"] =
   cmdChangeTitle msg $ doCmdDropAll (chat_id $ chat msg) (chat_title $ chat msg)
-cmdDropAll bus msg _ = invalidArgument bus msg ["dropAll"]
+cmdDropAll bus msg _ = invalidArgument bus msg ["drop_all"]
 
 -- Shared logic for title-changing actions
 -- Do such actions only in groups
