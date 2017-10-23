@@ -8,6 +8,7 @@ module TgMonad
   , getUpdates
   , sendMessage
   , replyMessage
+  , setChatTitle
   , isAdmin
   , isAdmin'
   , isBlacklisted
@@ -110,6 +111,13 @@ replyMessage original msg = do
       ("text", msg),
       ("reply_to_message_id", show $ message_id original)]
     fmap getResponseBody $ httpJSON url
+
+setChatTitle :: Int -> String -> TgBot IO (TgResponse Bool)
+setChatTitle chatId chatTitle = do
+  url <- liftIdentity $ apiPost "setChatTitle" [
+    ("chat_id", show chatId),
+    ("title", chatTitle)]
+  getResponseBody <$> httpJSON url
 
 isAdmin :: Maybe TgUser -> TgBotI Bool
 isAdmin u = do

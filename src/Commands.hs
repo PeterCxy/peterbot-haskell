@@ -45,6 +45,7 @@ registerCommands bus = do
       ("calc", cmdCalc),
       ("eval1", cmdEval1),
       ("solve", cmdSolve),
+      ("push", cmdPush),
       ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
@@ -124,6 +125,40 @@ cmdPrint _ msg args = do
   _ <- sendMessage (Types.chat_id $ chat msg) $ (T.unpack . T.unlines . tail) args
   return ()
 
+cmdPush :: Command
+cmdPush _ msg ["push", newItem]
+    | (chatType == "group") || (chatType == "supergroup") =
+      doCmdPush (chat_id $ chat msg) (chat_title $ chat msg) newItem
+    | otherwise = return ()
+  where
+    chatType = chat_type $ chat msg
+cmdPush bus msg _ = invalidArgument bus msg ["push"]
+
+doCmdPush :: Int -> Maybe T.Text -> T.Text -> TgBot IO ()
+doCmdPush _ Nothing _ = return ()
+doCmdPush chatId (Just title) newItem = do
+  _ <- setChatTitle chatId $ T.unpack $ pushTitle title newItem
+  return ()
+
+-- Push newItem to title. Drop the last one if longer than 255 chars.
+pushTitle :: T.Text -> T.Text -> T.Text
+pushTitle title newItem
+    | T.length newTitle >= 255 = dropTitle newTitle
+    | otherwise = newTitle
+  where
+    newTitle = joinTitle $ newItem : splitTitle title
+
+-- Drop the last item of the title.
+dropTitle :: T.Text -> T.Text
+dropTitle = joinTitle . init . splitTitle
+
+splitTitle :: T.Text -> [T.Text]
+splitTitle = map T.strip . T.splitOn "||"
+
+joinTitle :: [T.Text] -> T.Text
+joinTitle = T.intercalate " || "
+
+-- Calculator functions
 cmdRPN :: Command
 cmdRPN bus msg ["rpn"] = invalidArgument bus msg ["rpn"]
 cmdRPN _ msg args = do

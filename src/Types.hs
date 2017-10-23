@@ -34,6 +34,10 @@ instance (TgResult t) => TgResult [t] where
   tid [] = -1
   tid t = tid $ head t
 
+instance TgResult Bool where
+  tid True = 0
+  tid False = 1
+
 data TgResponse t = (TgResult t) => TgResponse {
   ok :: Bool,
   result :: Maybe (t)
@@ -75,12 +79,16 @@ instance FromJSON TgMessage where
     <*> m .:? "from"
 
 data TgChat = TgChat {
-  chat_id :: Int
+  chat_id :: Int,
+  chat_type :: T.Text,
+  chat_title :: Maybe T.Text
 }
 
 instance FromJSON TgChat where
   parseJSON = withObject "TgChat" $ \c -> TgChat
     <$> c .: "id"
+    <*> c .: "type"
+    <*> c .:? "title"
 
 data TgUser = TgUser {
   user_id :: Int,
