@@ -46,6 +46,7 @@ registerCommands bus = do
       ("calc", cmdCalc),
       ("eval1", cmdEval1),
       ("solve", cmdSolve),
+      ("title", cmdTitle),
       ("push", cmdPush),
       ("drop", cmdDrop),
       ("pop", cmdPop),
@@ -104,6 +105,7 @@ cmdInfo _ msg ["info"] = do
       "    /my_id - get your Telegram ID (internal ID)",
       "    /chat_id - get the internal ID of the current chat / group / channel",
       "    /print - print the arguments as-is",
+      "    /title - print the title of the current group",
       "    /push - <item> push an entry to the current group title",
       "    /pop - pop an entry from the current group title",
       "    /drop - drop the last entry of the current group title",
@@ -135,6 +137,15 @@ cmdPrint bus msg ["print"] = invalidArgument bus msg ["print"]
 cmdPrint _ msg args = do
   _ <- sendMessage (Types.chat_id $ chat msg) $ (T.unpack . T.unlines . tail) args
   return ()
+
+cmdTitle :: Command
+cmdTitle _ msg ["title"] =
+  case chat_title $ chat msg of
+      Nothing -> return ()
+      Just title -> do
+        _ <- sendMessage (Types.chat_id $ chat msg) $ "Current group title: " ++ T.unpack title
+        return ()
+cmdTitle bus msg _ = invalidArgument bus msg ["title"]
 
 -- Titlebot: title-changing actions
 cmdPush :: Command
