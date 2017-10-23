@@ -48,6 +48,7 @@ registerCommands bus = do
       ("solve", cmdSolve),
       ("push", cmdPush),
       ("drop", cmdDrop),
+      ("pop", cmdPop),
       ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
@@ -139,6 +140,11 @@ cmdDrop _ msg ["drop"] =
   cmdChangeTitle msg $ doCmdDrop (chat_id $ chat msg) (chat_title $ chat msg)
 cmdDrop bus msg _ = invalidArgument bus msg ["drop"]
 
+cmdPop :: Command
+cmdPop _ msg ["pop"] =
+  cmdChangeTitle msg $ doCmdPop (chat_id $ chat msg) (chat_title $ chat msg)
+cmdPop bus msg _ = invalidArgument bus msg ["pop"]
+
 -- Shared logic for title-changing actions
 -- Do such actions only in groups
 cmdChangeTitle :: TgMessage -> TgBot IO () -> TgBot IO ()
@@ -158,6 +164,10 @@ doCmdPush chatId (Just title) newItem = doChangeTitle chatId $ pushTitle title n
 doCmdDrop :: Int -> Maybe T.Text -> TgBot IO ()
 doCmdDrop _ Nothing = return ()
 doCmdDrop chatId (Just title) = doChangeTitle chatId $ dropTitle title
+
+doCmdPop :: Int -> Maybe T.Text -> TgBot IO ()
+doCmdPop _ Nothing = return ()
+doCmdPop chatId (Just title) = doChangeTitle chatId $ popTitle title
 
 doChangeTitle :: Int -> T.Text -> TgBot IO ()
 doChangeTitle chatId newTitle = do
@@ -181,6 +191,10 @@ pushTitle title newItem
 -- Drop the last item of the title.
 dropTitle :: T.Text -> T.Text
 dropTitle = joinTitle . init . splitTitle
+
+-- Pop the first item out of the title
+popTitle :: T.Text -> T.Text
+popTitle = joinTitle . tail . splitTitle
 
 splitTitle :: T.Text -> [T.Text]
 splitTitle = map T.strip . T.splitOn "||"
