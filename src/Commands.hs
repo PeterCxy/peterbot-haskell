@@ -131,6 +131,7 @@ cmdPrint _ msg args = do
   _ <- sendMessage (Types.chat_id $ chat msg) $ (T.unpack . T.unlines . tail) args
   return ()
 
+-- Titlebot: title-changing actions
 cmdPush :: Command
 cmdPush _ msg ["push", newItem] =
   cmdChangeTitle msg $ doCmdPush (chat_id $ chat msg) (chat_title $ chat msg) newItem
