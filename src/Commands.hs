@@ -49,6 +49,7 @@ registerCommands bus = do
       ("push", cmdPush),
       ("drop", cmdDrop),
       ("pop", cmdPop),
+      ("dropAll", cmdDropAll),
       ("send", cmdSend)]
 
     subscriber :: (String, Command) -> EventBus TgUpdate -> TgUpdate -> MaybeT (TgBot IO) ()
@@ -145,6 +146,11 @@ cmdPop _ msg ["pop"] =
   cmdChangeTitle msg $ doCmdPop (chat_id $ chat msg) (chat_title $ chat msg)
 cmdPop bus msg _ = invalidArgument bus msg ["pop"]
 
+cmdDropAll :: Command
+cmdDropAll _ msg ["dropAll"] =
+  cmdChangeTitle msg $ doCmdDropAll (chat_id $ chat msg) (chat_title $ chat msg)
+cmdDropAll bus msg _ = invalidArgument bus msg ["dropAll"]
+
 -- Shared logic for title-changing actions
 -- Do such actions only in groups
 cmdChangeTitle :: TgMessage -> TgBot IO () -> TgBot IO ()
@@ -168,6 +174,10 @@ doCmdDrop chatId (Just title) = doChangeTitle chatId $ dropTitle title
 doCmdPop :: Int -> Maybe T.Text -> TgBot IO ()
 doCmdPop _ Nothing = return ()
 doCmdPop chatId (Just title) = doChangeTitle chatId $ popTitle title
+
+doCmdDropAll :: Int -> Maybe T.Text -> TgBot IO ()
+doCmdDropAll _ Nothing = return ()
+doCmdDropAll chatId (Just title) = doChangeTitle chatId $ dropAllTitle title
 
 doChangeTitle :: Int -> T.Text -> TgBot IO ()
 doChangeTitle chatId newTitle = do
@@ -195,6 +205,10 @@ dropTitle = joinTitle . init . splitTitle
 -- Pop the first item out of the title
 popTitle :: T.Text -> T.Text
 popTitle = joinTitle . tail . splitTitle
+
+-- Keep only the first item of the title
+dropAllTitle :: T.Text -> T.Text
+dropAllTitle = head . splitTitle
 
 splitTitle :: T.Text -> [T.Text]
 splitTitle = map T.strip . T.splitOn "||"
